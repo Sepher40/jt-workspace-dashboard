@@ -16,8 +16,9 @@ window.DASHBOARD_CONFIG = __CONFIG__;
 <script>
 (function(){
   var tag = "__CHANNEL__"; // "latest" (gets changes first) or "stable" (a day later)
-  var urls = ["https://cdn.jsdelivr.net/npm/jt-workspace-dashboard@" + tag + "/dist/dashboard.js",
-              "https://unpkg.com/jt-workspace-dashboard@" + tag + "/dist/dashboard.js"];
+  // unpkg first: it picks up a new version within minutes. jsDelivr is the backup (it can serve an old copy for days).
+  var urls = ["https://unpkg.com/jt-workspace-dashboard@" + tag + "/dist/dashboard.js",
+              "https://cdn.jsdelivr.net/npm/jt-workspace-dashboard@" + tag + "/dist/dashboard.js"];
   function load(i){
     if(i >= urls.length){ document.getElementById("dashboard").textContent = "Couldn't load the dashboard right now. Try reloading in a minute."; return; }
     var s = document.createElement("script"); s.src = urls[i]; s.onerror = function(){ load(i + 1); }; document.body.appendChild(s);
