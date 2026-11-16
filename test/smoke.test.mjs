@@ -21,6 +21,7 @@ const TASKS = {
     {id: "tq", content: "Which icon set?", parentId: "t", labels: ["Question"], addedAt: now},
     {id: "ts", content: "Rename tags", parentId: "t", description: "- Use 'Treatment tags'", labels: [], addedAt: now},
     {id: "h", content: "Category Connections", description: "", labels: ["Handoff"], addedAt: now},
+    {id: "new1", content: "Remembering Numbers", description: "Figma: https://www.figma.com/design/y", labels: [], addedAt: now},
     {id: "ask", content: "Ask about pricing page", description: "Meeting: Jeremy-Tactus UX", labels: ["Ask"], addedAt: now}
   ]
 };
@@ -58,7 +59,7 @@ await run("Personal + Tactus (this account)", {
   workspaces: [
     {id: "personal", name: "Personal", accent: "#3A5BD9", todoist: {projectId: "P1"}, notes: {dataSource: "DS_P", minSteps: 3}, updateTask: "trig_A"},
     {id: "tactus", name: "Tactus", accent: "#7B4FD1", todoist: {projectId: "T1"}, labels: {ready: "Ready to show"}, notes: {dataSource: "DS_T", all: true, figmaProp: "Figma"}, calendar: {hide: ["Time Blocking"]}, updateTask: "trig_B",
-      features: {handoff: true, meetingAsks: true, showFollowUp: true, chatLink: false}}
+      kickoffKind: "treatment", features: {handoff: true, meetingAsks: true, showFollowUp: true, chatLink: false, kickoff: true}}
   ]
 }, async ({d, text, calls, w, writes}) => {
   check(text("#wsSwitch").includes("Personal") && text("#wsSwitch").includes("Tactus"), "workspace switcher shows both");
@@ -83,6 +84,11 @@ await run("Personal + Tactus (this account)", {
   check(text("#list-today").includes("Figma") && text("#list-today").includes("Notes") && text("#list-today").includes("Questions · 1 open"), "figma + notion chips and questions fold");
   check(!text("#list-today .subs-box").includes("Which icon set") && text("#list-today .subs-box").includes("Rename tags"), "questions kept out of the checklist");
   check(text("#meetings").includes("Ask about pricing page"), "meeting ask under its meeting");
+  check(text("#list-upcoming").includes("Remembering Numbers") && text("#list-upcoming").includes("Kick off"), "new to-do shows a Kick off button");
+  check(!text("#list-today").includes("Kick off"), "no Kick off outside To do");
+  { let opened = ""; w.open = u => { opened = u; return {}; };
+    [...d.querySelectorAll("#list-upcoming button.go")].find(b => b.textContent === "Kick off").click(); await wait(100);
+    check(opened.startsWith("https://claude.ai/new?q=") && decodeURIComponent(opened).includes("Remembering Numbers") && decodeURIComponent(opened).includes("figma.com/design/y") && decodeURIComponent(opened).includes("treatment"), "Kick off opens a new chat with the prompt"); }
   check(d.querySelector('#list-today a.link-pill')?.href === "https://fathom.video/share/abc", "markdown-style Link line opens the real link");
   check(!text("#meetings").includes("Time Blocking"), "hidden calendar events");
   check(w.location.hash === "#tactus", "hash follows workspace");

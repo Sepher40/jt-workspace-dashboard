@@ -364,6 +364,28 @@
     if(subs.length){ const n = el("span", "chip"); n.innerHTML = ICON.todo; n.append(document.createTextNode(subs.filter(x => x && x.d).length + "/" + subs.length)); n.title = "To-dos done"; row.append(n); }
     return row.childNodes.length ? row : null;
   }
+  // "Kick off" on new To do items that don't have a chat yet: opens a new Claude chat with a kickoff prompt.
+  const DEFAULT_KICKOFF = "Let's kick off the design of {title}.\n{links}\nStart by looking at what's on the Figma page and in the notes, then give me: a short summary of the {kind} (goal, steps, levels), open questions to ask the team, and a plan for Round 1.";
+  function kickoffPrompt(it){
+    const links = [["Figma page", it.figma], ["Notes", it.notion], ["Source", it.url !== it.todoistUrl ? it.url : null], ["Todoist task", it.todoistUrl]]
+      .filter(x => safeUrl(x[1])).map(x => x[0] + ": " + x[1]).join("\n");
+    const note = (priorityOf(it.note) ? priorityOf(it.note).rest : it.note) || "";
+    return String(WS.kickoffPrompt || DEFAULT_KICKOFF).replace(/\{title\}/g, it.title || "").replace(/\{links\}/g, links + (note ? "\n" + note : ""))
+      .replace(/\{kind\}/g, WS.kickoffKind || "project").replace(/\{figma\}/g, it.figma || "").replace(/\{notion\}/g, it.notion || "").replace(/\{todoist\}/g, it.todoistUrl || "");
+  }
+  function kickoffEl(it, section){
+    if(!feat("kickoff") || section !== "upcoming" || it.chat) return null;
+    const wrap = el("div", "kick-wrap");
+    const b = el("button", "go", "Kick off"); b.type = "button"; b.title = "Opens a new Claude chat with a prompt to start the design";
+    b.onclick = async e => {
+      e.stopPropagation();
+      const msg = kickoffPrompt(it); let copied = false, opened = false;
+      try { await navigator.clipboard.writeText(msg); copied = true; } catch(_){}
+      try { const w = window.open("https://claude.ai/new?q=" + encodeURIComponent(msg), "_blank"); if(w){ try { w.opener = null; } catch(_){} opened = true; } } catch(_){}
+      toast(opened ? "New chat opened with the kickoff prompt." + (copied ? " It's also copied, in case the chat box is empty." : "") : copied ? "Kickoff prompt copied. Paste it into a new chat." : "Couldn't open a chat here. Prompt: " + msg.replace(/\n/g, " "));
+    };
+    wrap.append(b); return wrap;
+  }
   function handoffEl(it, section){
     if(!feat("handoff") || section !== "handoff") return null;
     const wrap = el("div", "kick-wrap");
@@ -474,7 +496,7 @@
     const log = (it.log || []).filter(x => x && x.t);
     if(log.length){ const ulC = el("ul", "bullets"); log.forEach(x => ulC.append(el("li", null, x.t))); fold(it.id + ":log", "Context", ulC); }
     if(folds.childNodes.length) li.append(folds);
-    const ho = handoffEl(it, section); if(ho) li.append(ho);
+    const ho = handoffEl(it, section) || kickoffEl(it, section); if(ho) li.append(ho);
     return li;
   }
 
@@ -537,7 +559,7 @@
         if(canWrite) head.append(moreMenu(it, menuOpts(it, sec, head)));
         li.append(head);
         const chips = chipRow(it, {compact: true, who: sec === "waiting"}); if(chips) li.append(chips);
-        const hh = handoffEl(it, sec); if(hh) li.append(hh);
+        const hh = handoffEl(it, sec) || kickoffEl(it, sec); if(hh) li.append(hh);
         li.addEventListener("click", e => { if(e.target.closest("a,button,input,select,.menu-wrap,.wait-input")) return; openDrawer(it.id); });
         li.addEventListener("dragstart", e => { kDrag = it.id; li.classList.add("dragging"); try { e.dataTransfer.setData("text/plain", it.id); } catch(_){} e.dataTransfer.effectAllowed = "move"; });
         li.addEventListener("dragend", () => { kDrag = null; li.classList.remove("dragging"); board.querySelectorAll("ul.over").forEach(u => u.classList.remove("over")); });

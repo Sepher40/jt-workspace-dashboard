@@ -30,7 +30,9 @@ Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml
       calendar: { ids: ["primary"], hide: ["Time Blocking"] },   // or false
       updateTask: "trig_…",
       notes: { dataSource: "collection id", minSteps: 3 },   // automatic Notion notes pages (or all: true)
-      features: { handoff: false, meetingAsks: false, showFollowUp: false, chatLink: false }
+      features: { handoff: false, meetingAsks: false, showFollowUp: false, chatLink: false, kickoff: false },
+      kickoffKind: "treatment",          // optional: word used in the default kickoff prompt
+      kickoffPrompt: "…{title}…{links}…" // optional: custom kickoff prompt ({title} {links} {figma} {notion} {todoist} {kind})
     }
   ]
 }

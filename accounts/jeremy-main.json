@@ -45,13 +45,16 @@
         "handoff": true,
         "meetingAsks": true,
         "showFollowUp": true,
-        "chatLink": true
+        "chatLink": true,
+        "kickoff": true
       },
       "notes": {
         "dataSource": "41a9451b-d62b-8158-8a00-000b6cf29e32",
         "all": true,
         "figmaProp": "Figma"
-      }
+      },
+      "kickoffKind": "treatment",
+      "kickoffPrompt": "Let's kick off the design of {title}, a new treatment in the Tactus VRC app.\n{links}\nShezena added reference screens to the Figma page. Start by reviewing them and the notes, then give me: a short summary of the treatment (goal, steps, levels), open questions for the team, and a plan for Round 1 (my first section on the Figma page will be \"Round 1\")."
     }
   ]
 }
