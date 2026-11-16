@@ -1,0 +1,13 @@
+{
+  "name": "jt-workspace-dashboard",
+  "version": "0.1.0",
+  "description": "Shared code for Jeremy's Claude dashboards: a Todoist + Google Calendar consolidator with workspaces.",
+  "main": "dist/dashboard.js",
+  "files": ["dist/dashboard.js", "README.md"],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node test/smoke.test.mjs"
+  },
+  "license": "MIT",
+  "devDependencies": { "jsdom": "24.1.3" }
+}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>__TITLE__</title>
+</head>
+<body>
+<div id="dashboard"></div>
+<!-- This page is only a shell: its settings, plus the shared dashboard code loaded from npm.
+     Change the dashboard in the GitHub repo jt-workspace-dashboard, never here. -->
+<script>
+window.DASHBOARD_CONFIG = __CONFIG__;
+</script>
+<script>
+(function(){
+  var tag = "__CHANNEL__"; // "latest" (gets changes first) or "stable" (a day later)
+  var urls = ["https://cdn.jsdelivr.net/npm/jt-workspace-dashboard@" + tag + "/dist/dashboard.js",
+              "https://unpkg.com/jt-workspace-dashboard@" + tag + "/dist/dashboard.js"];
+  function load(i){
+    if(i >= urls.length){ document.getElementById("dashboard").textContent = "Couldn't load the dashboard right now. Try reloading in a minute."; return; }
+    var s = document.createElement("script"); s.src = urls[i]; s.onerror = function(){ load(i + 1); }; document.body.appendChild(s);
+  }
+  load(0);
+})();
+</script>
+</body>
+</html>

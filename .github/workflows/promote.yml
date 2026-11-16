@@ -1,0 +1,58 @@
+# Once a day (or on demand): the newest release that has been live for 24 hours becomes "stable",
+# which the Pelicargo dashboard uses. Run it by hand ("Run workflow") to ship to Pelicargo right away.
+name: Promote to stable
+on:
+  schedule:
+    - cron: "17 16 * * *"   # daily, 9:17 AM Vancouver (PDT)
+  workflow_dispatch:
+    inputs:
+      now:
+        description: "Promote the newest release now (skip the 24-hour wait)"
+        type: boolean
+        default: true
+permissions:
+  contents: read
+  id-token: write
+concurrency: publish
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pick the release
+        id: pick
+        run: |
+          MIN_AGE=86400
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.now }}" = "true" ]; then MIN_AGE=0; fi
+          NOW=$(date +%s); PICK=""
+          for t in $(git tag --list 'v*' --sort=-creatordate); do
+            AGE=$(( NOW - $(git log -1 --format=%ct "$t") ))
+            if [ "$AGE" -ge "$MIN_AGE" ]; then PICK="$t"; break; fi
+          done
+          echo "tag=$PICK" >> "$GITHUB_OUTPUT"
+          echo "Picked: ${PICK:-none}"
+      - if: steps.pick.outputs.tag != ''
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pick.outputs.tag }}
+      - if: steps.pick.outputs.tag != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - if: steps.pick.outputs.tag != ''
+        name: Publish as stable
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm install -g npm@latest
+          V="${{ steps.pick.outputs.tag }}"; V="${V#v}-stable"
+          if npm view "jt-workspace-dashboard@$V" version >/dev/null 2>&1; then echo "Already stable: $V"; exit 0; fi
+          npm install --no-audit --no-fund
+          npm version "$V" --no-git-tag-version --allow-same-version
+          npm test
+          npm publish --access public --tag stable
+          sleep 20
+          curl -fsS "https://purge.jsdelivr.net/npm/jt-workspace-dashboard@stable/dist/dashboard.js" || true

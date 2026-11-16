@@ -1,0 +1,38 @@
+# Every push to main: test, then publish a new version as "latest" (used by the Personal + Tactus dashboard).
+# Uses npm trusted publishing (no stored token). Until that is linked, it falls back to the NPM_TOKEN secret.
+name: Publish
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+  id-token: write
+concurrency: publish
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      - run: npm install -g npm@latest
+      - run: npm install --no-audit --no-fund
+      - name: Set version
+        run: npm version "0.1.${{ github.run_number }}" --no-git-tag-version --allow-same-version
+      - name: Test
+        run: npm test
+      - name: Publish
+        run: npm publish --access public --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Tag release
+        run: |
+          git tag "v0.1.${{ github.run_number }}"
+          git push origin "v0.1.${{ github.run_number }}"
+      - name: Refresh CDN caches
+        run: |
+          sleep 20
+          curl -fsS "https://purge.jsdelivr.net/npm/jt-workspace-dashboard@latest/dist/dashboard.js" || true

@@ -1,0 +1,35 @@
+<div class="wrap">
+  <header>
+    <div>
+      <div class="kicker" id="refreshed">Hi</div>
+      <h1 id="date">Dashboard</h1>
+      <div class="ws-row"><div class="view-toggle ws-switch" id="wsSwitch" role="group" aria-label="Workspace" hidden></div></div>
+    </div>
+    <div class="head-right">
+      <div class="view-toggle" role="group" aria-label="View"><button type="button" data-view="list">List</button><button type="button" data-view="board">Board</button></div>
+      <div class="view-toggle"><button type="button" id="activeOnly" aria-pressed="false">Active only</button></div>
+      <div class="view-toggle"><button type="button" id="collapseAll" title="Show just the titles and buttons, or everything">Collapse all</button></div>
+      <button class="clear-new" type="button" id="clearNew" hidden>Clear new</button>
+      <span class="update-wrap"><button class="update-state" id="updateState" type="button" aria-describedby="updateTip"></button><span class="update-tip" id="updateTip" role="tooltip" hidden></span></span>
+      <button class="link-chats" type="button" id="updateBtn" hidden><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="updateLabel">Update</span></button>
+    </div>
+    <div class="status" id="status" hidden></div>
+  </header>
+  <div class="grid">
+    <div class="board" id="board" aria-label="Board view"></div>
+    <div class="main" id="main"></div>
+    <aside class="rail">
+      <section class="card">
+        <h2 id="railTitle">Today</h2>
+        <ul id="meetings"><li class="empty">Loading today's calendar…</li></ul>
+      </section>
+      <p class="ver"><span id="wsName"></span> <span id="ver"></span></p>
+    </aside>
+  </div>
+</div>
+<div class="drawer-back" id="drawerBack" hidden></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Item details" aria-hidden="true">
+  <div class="drawer-head"><span class="drawer-sec" id="drawerSec"></span><button type="button" class="drawer-close" id="drawerClose" aria-label="Close details"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+  <ul id="drawerBody"></ul>
+</aside>
+<div class="toast" id="toast" hidden><span id="toastMsg"></span><button id="toastUndo" type="button">Undo</button></div>

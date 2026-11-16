@@ -1,0 +1,28 @@
+{
+  "title": "Dashboard",
+  "ownerName": "Jeremy",
+  "workspaces": [
+    {
+      "id": "personal", "name": "Personal", "accent": "#2B8A6E",
+      "todoist": { "projectId": "6j2jrQ29XqJXw24H" },
+      "sections": { "ready": "Paused" },
+      "calendar": { "ids": ["primary"] },
+      "railTitle": "Today",
+      "updateTask": "trig_0169xd4ogHFW8ZWbeYvP2zmg",
+      "updateLabel": "Sort inbox", "updatingLabel": "Sorting your inbox…",
+      "updateStartedMsg": "Sorting your inbox. New to-dos show up here in a few minutes.",
+      "features": {}
+    },
+    {
+      "id": "tactus", "name": "Tactus", "accent": "#3A5BD9",
+      "todoist": { "projectId": "6fhCm5rVqgvqH8cq" },
+      "sections": { "ready": "Ready to show" },
+      "calendar": { "ids": ["primary"], "hide": ["Time Blocking"], "acceptedOnly": true },
+      "railTitle": "Today's meetings",
+      "updateTask": "trig_01DBW9oVSCxkQhczvXH6WtRF",
+      "updateLabel": "Update", "updatingLabel": "Pulling meetings, messages and email…",
+      "updateStartedMsg": "Updating now. Takes a few minutes; the page fills in as it goes.",
+      "features": { "handoff": true, "meetingAsks": true, "showFollowUp": true, "chatLink": true }
+    }
+  ]
+}
