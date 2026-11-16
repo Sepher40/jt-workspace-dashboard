@@ -71,8 +71,12 @@
     dayData = calStored && calStored.date === isoDay(new Date()) ? calStored : null;
     statusDoc = null; renderStatus(); watchStatus();
     render();
-    loadTasks(); loadCalendar();
+    if(!items.length && db){ readDbCache(w.id).then(list => { if(list && w === WS && !cache[w.id] && !items.length){ items = list; render(); } }); }
+    clearTimeout(slowTimer);
+    if(!items.length && mcp) slowTimer = setTimeout(() => { if(!items.length && w === WS) setStatus("Loading your to-dos…"); }, 1500);
+    if(mcp){ loadTasks(); loadCalendar(); }
   }
+  let slowTimer = null;
   function renderSwitcher(){
     const box = $("wsSwitch"); box.replaceChildren(); box.hidden = WORKSPACES.length < 2;
     WORKSPACES.forEach(w => { const b = el("button", null, w.name || w.id); b.type = "button"; b.setAttribute("aria-pressed", String(w === WS)); b.onclick = () => { if(w !== WS){ closeDrawer(); applyWorkspace(w); } }; box.append(b); });
@@ -105,7 +109,17 @@
   let db = null, mcp = null, items = [], canWrite = true, undoState = null, toastTimer = null, refreshTimer = null;
   const cache = {};
   const CACHE_V = 1;
-  function saveCache(wsId, list){ try { localStorage.setItem("dash.cache." + wsId, JSON.stringify({v: CACHE_V, t: Date.now(), items: list})); } catch(_){} }
+  const lastSaved = {};
+  function saveCache(wsId, list){
+    const body = JSON.stringify(list);
+    if(lastSaved[wsId] === body) return; lastSaved[wsId] = body;
+    try { localStorage.setItem("dash.cache." + wsId, JSON.stringify({v: CACHE_V, t: Date.now(), items: list})); } catch(_){}
+    if(db && body.length < 400000){ try { db.doc("cache/" + wsId).set({v: CACHE_V, t: Date.now(), items: body}).catch(() => {}); } catch(_){} }
+  }
+  async function readDbCache(wsId){
+    if(!db) return null;
+    try { const sn = await db.doc("cache/" + wsId).get(); const c = sn && sn.exists ? sn.data() : null; return c && c.v === CACHE_V ? JSON.parse(c.items) : null; } catch(_){ return null; }
+  }
   function readCache(wsId){ try { const c = JSON.parse(localStorage.getItem("dash.cache." + wsId) || "null"); return c && c.v === CACHE_V && Array.isArray(c.items) ? c : null; } catch(_){ return null; } }
   const seenMap = store("pd.seen", {}), orderMap = store("pd.order", {});
   function saveSeen(id, t){ seenMap[id] = t; save("pd.seen", seenMap); }
@@ -751,11 +765,11 @@
   /* ---------- start ---------- */
   WS = pickInitial();
   setView(view); setActiveOnly(activeOnly);
+  applyWorkspace(WS); // paint the last known tasks right away, before the connectors are ready
   (async () => {
     const use = n => (window.claude && window.claude.use) ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
     [db, mcp] = await Promise.all([use("db"), use("mcp")]);
-    if(!mcp){ canWrite = false; applyWorkspace(WS); $("refreshed").textContent = "Open this page in Claude to see your dashboard."; return; }
-    if(!cache[WS.id] && !readCache(WS.id)) setStatus("Loading your to-dos…");
+    if(!mcp){ canWrite = false; render(); $("refreshed").textContent = "Open this page in Claude to see your dashboard."; return; }
     applyWorkspace(WS);
     setInterval(loadTasks, 120000);
     let calDay = new Date().toDateString();
