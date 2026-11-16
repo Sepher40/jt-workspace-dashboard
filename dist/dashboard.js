@@ -5,7 +5,8 @@
   "use strict";
   const CFG = window.DASHBOARD_CONFIG || {};
   const WORKSPACES = Array.isArray(CFG.workspaces) && CFG.workspaces.length ? CFG.workspaces : [{id: "main", name: "Dashboard", todoist: {}}];
-  const LABELS = Object.assign({today: "In progress", ready: "Paused", waiting: "Waiting", later: "Later", handoff: "Handoff", meeting: "Ask", question: "Question"}, CFG.labels || {});
+  const BASE_LABELS = Object.assign({today: "In progress", ready: "Paused", waiting: "Waiting", later: "Later", handoff: "Handoff", meeting: "Ask", question: "Question"}, CFG.labels || {});
+  let LABELS = BASE_LABELS; // per workspace: BASE_LABELS + workspace.labels
   const OWNER_NAME = String(CFG.ownerName || "").slice(0, 40);
   const VERSION = "0.1.0";
 
@@ -26,6 +27,7 @@
     chat: SVG('<path d="M8 2v3.2M8 10.8V14M2 8h3.2M10.8 8H14M3.8 3.8l2.2 2.2M10 10l2.2 2.2M12.2 3.8L10 6M6 10l-2.2 2.2"/>'),
     link: SVG('<path d="M7 9a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.6.6M9 7a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.6-.6"/>'),
     todo: SVG('<rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/><path d="M5.5 8l1.8 1.8L10.5 6"/>'),
+    notes: SVG('<path d="M4 2.5h6l2.5 2.5v8.5H4z"/><path d="M6.5 7h4M6.5 9.5h4"/>'),
     cal: SVG('<rect x="2.5" y="3.5" width="11" height="10" rx="2"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>')
   };
   const CHEV = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -43,12 +45,13 @@
   function pickInitial(){ return wsFromHash() || WORKSPACES.find(w => w.id === store("dash.ws", "")) || WORKSPACES[0]; }
   function applyWorkspace(w){
     WS = w;
-    const names = Object.assign({upcoming: "To do", today: "In progress", ready: "Paused", waiting: "Waiting on others", handoff: "Handoff prep", later: "Later"}, w.sections || {});
+    LABELS = Object.assign({}, BASE_LABELS, w.labels || {});
+    // Section names are the Todoist label names, so the dashboard and Todoist always say the same thing.
+    const names = Object.assign({upcoming: "To do", today: LABELS.today, ready: LABELS.ready, waiting: LABELS.waiting, handoff: LABELS.handoff, later: LABELS.later}, w.sections || {});
     LABEL = Object.assign({}, names, {done: "Complete", removed: "Removed"});
     SECTIONS = ["today", "ready", "waiting"].concat(feat("handoff") ? ["handoff"] : [], ["upcoming", "later"]);
     DRAGGABLE = ["today", "upcoming", "later"].concat(feat("handoff") ? ["handoff"] : []);
-    EMPTY = {today: "Nothing in progress. Start something from " + names.upcoming + ".", ready: "Nothing in " + names.ready + ".", waiting: "Not waiting on anyone.",
-      handoff: "Nothing approved and waiting for a handoff.", upcoming: "Things you haven't started show here.", later: "Nothing parked for later."};
+    EMPTY = {today: "Nothing in progress.", ready: "Nothing here.", waiting: "Not waiting on anyone.", handoff: "Nothing waiting for a handoff.", upcoming: "Nothing to do.", later: "Nothing parked for later."};
     PRIMARY = {today: [names.ready, "ready"], ready: ["Back to " + names.today.toLowerCase(), "today"], waiting: ["Back to " + names.today.toLowerCase(), "today"],
       handoff: ["Handed off", "done"], upcoming: ["Start", "today"], later: ["Start", "today"], done: ["Reopen", "today"]};
     // accent colour per workspace (light and dark)
@@ -59,10 +62,14 @@
     save("dash.ws", w.id);
     if(WORKSPACES.length > 1 && location.hash.slice(1) !== w.id){ try { history.replaceState(null, "", "#" + w.id); } catch(_){} }
     buildSections(); renderSwitcher();
-    $("railTitle").textContent = w.railTitle || "Today";
+    $("railTitle").textContent = "Today";
     $("activeOnly").title = "Show only " + ["today", "ready", "waiting"].concat(feat("handoff") ? ["handoff"] : []).map(s => LABEL[s]).join(", ");
-    $("updateLabel").textContent = w.updateLabel || "Update";
-    items = (cache[w.id] || []); statusDoc = null; renderStatus(); watchStatus();
+    $("updateLabel").textContent = "Update";
+    const stored = cache[w.id] ? null : readCache(w.id);
+    items = cache[w.id] || (stored ? stored.items : []);
+    const calStored = store("dash.cal." + w.id, null);
+    dayData = calStored && calStored.date === isoDay(new Date()) ? calStored : null;
+    statusDoc = null; renderStatus(); watchStatus();
     render();
     loadTasks(); loadCalendar();
   }
@@ -97,6 +104,9 @@
   /* ---------- state ---------- */
   let db = null, mcp = null, items = [], canWrite = true, undoState = null, toastTimer = null, refreshTimer = null;
   const cache = {};
+  const CACHE_V = 1;
+  function saveCache(wsId, list){ try { localStorage.setItem("dash.cache." + wsId, JSON.stringify({v: CACHE_V, t: Date.now(), items: list})); } catch(_){} }
+  function readCache(wsId){ try { const c = JSON.parse(localStorage.getItem("dash.cache." + wsId) || "null"); return c && c.v === CACHE_V && Array.isArray(c.items) ? c : null; } catch(_){ return null; } }
   const seenMap = store("pd.seen", {}), orderMap = store("pd.order", {});
   function saveSeen(id, t){ seenMap[id] = t; save("pd.seen", seenMap); }
   function saveOrder(id, o){ orderMap[id] = o; save("pd.order", orderMap); }
@@ -107,14 +117,14 @@
 
   /* ---------- Todoist adapter ---------- */
   const STATUS_KEYS = ["today", "ready", "waiting", "later", "handoff", "meeting"];
-  const STATUS_LABELS = STATUS_KEYS.map(k => LABELS[k]);
+  const statusLabels = () => STATUS_KEYS.map(k => LABELS[k]);
   const parse = r => {
     const p = r && r.payload; if(p && typeof p === "object") return p;
     const txt = typeof p === "string" ? p : ((r && r.content) || []).filter(c => c.type === "text").map(c => c.text)[0] || "";
     try { return JSON.parse(txt); } catch(_){ const m = txt.match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : {}; } catch(_){ return {}; } }
   };
   const td = (tool, input) => mcp.callTool(CFG.todoistServer || "Todoist", tool, input, {cache: false});
-  const KEYLINE = /^(Waiting on|Link|Figma|Chat|Meeting):[ \t]*(.*)$/;
+  const KEYLINE = /^(Waiting on|Link|Figma|Notion|Chat|Meeting):[ \t]*(.*)$/;
   function splitDesc(desc){
     const [head, ctx = ""] = String(desc || "").split(/^Context:[ \t]*$/m);
     const keys = {}, rest = [];
@@ -151,12 +161,14 @@
     return {id: t.id, title: t.content, description: String(t.description || ""), labels, section, order: orderMap[t.id] ?? (i + 1), projectId: t.projectId,
       note, log, subtasks, questions, _server: subtasks.concat(questions).map(x => ({id: x.id, d: x.d})),
       waitingOn: keys["Waiting on"] || "", url: safeUrl(keys.Link) || "https://app.todoist.com/app/task/" + t.id, todoistUrl: "https://app.todoist.com/app/task/" + t.id,
-      figma: safeUrl(keys.Figma), chat: safeUrl(keys.Chat), meeting: keys.Meeting || "", due, overdue, newAt: Date.parse(t.addedAt) || 0, seenAt: seenMap[t.id] || 0};
+      figma: safeUrl(keys.Figma), notion: safeUrl(keys.Notion), chat: safeUrl(keys.Chat), meeting: keys.Meeting || "", due, overdue, newAt: Date.parse(t.addedAt) || 0, seenAt: seenMap[t.id] || 0};
   }
   function projectIds(){ const t = WS.todoist || {}; return [].concat(t.projectIds || [], t.projectId || []).filter(Boolean); }
   let loadSeq = 0;
+  let lastLoad = 0;
   async function loadTasks(){
     if(!mcp) return;
+    lastLoad = Date.now();
     const w = WS, seq = ++loadSeq, pids = projectIds();
     if(!pids.length){ setStatus("This workspace has no Todoist project set in its settings."); return; }
     try {
@@ -173,7 +185,7 @@
         const done = comp ? (parse(comp).tasks || []).filter(t => !t.parentId) : [];
         done.forEach(t => next.push({id: t.id, title: t.content, section: "done", _completed: true, labels: t.labels || [], description: String(t.description || ""), touchedAt: Date.parse(t.completedAt) || 0, subtasks: [], questions: [], _server: []}));
       });
-      items = next; cache[w.id] = next; setStatus(""); render();
+      items = next; cache[w.id] = next; saveCache(w.id, next); setStatus(""); render();
     } catch(e){
       if(w !== WS) return;
       const c = e && e.code;
@@ -203,7 +215,7 @@
         else if(s === "removed"){ await td("delete-object", {type: "task", id}); }
         else {
           if(it._completed){ await td("uncomplete-tasks", {ids: [id]}); it._completed = false; }
-          labels = (it.labels || []).filter(l => !STATUS_LABELS.includes(l)); if(LABELS[s]) labels.push(LABELS[s]);
+          labels = (it.labels || []).filter(l => !statusLabels().includes(l)); if(LABELS[s]) labels.push(LABELS[s]);
           desc = setLine(desc, "Waiting on", s === "waiting" ? (patch.waitingOn || it.waitingOn) : null);
           desc = setLine(desc, "Meeting", s === "meeting" ? (patch.meeting || it.meeting) : null);
         }
@@ -242,6 +254,7 @@
         .sort((a, b) => String((a.start || {}).dateTime || (a.start || {}).date).localeCompare(String((b.start || {}).dateTime || (b.start || {}).date)));
       dayData = {date: isoDay(n), meetings: evs.map((e, i) => { const st = e.start || {}, en = e.end || {};
         return {id: e.id || "e" + i, title: e.summary || "(No title)", url: e.htmlLink, time: st.dateTime ? fmt(st.dateTime) + (en.dateTime ? " – " + fmt(en.dateTime) : "") : "All day"}; })};
+      save("dash.cal." + w.id, dayData);
     } catch(e){ if(w !== WS) return; dayData = {date: isoDay(n), meetings: [], error: true}; }
     renderMeetings();
   }
@@ -281,6 +294,7 @@
     const u = safeUrl(it.url); if(u) pill(u, "Link", ICON.link, "Link");
     const f = safeUrl(it.figma), c = safeUrl(it.chat);
     if(f) pill(f, o.compact ? "" : "Figma", ICON.figma, "Figma");
+    const nn = safeUrl(it.notion); if(nn) pill(nn, o.compact ? "" : "Notes", ICON.notes, "Notion notes");
     if(c){ pill(c, o.compact ? "" : "Chat", ICON.chat, "Claude chat"); const a = row.lastChild; a.onclick = e => { e.preventDefault(); e.stopPropagation(); openChat(c); }; }
     const subs = it.subtasks || [];
     if(subs.length){ const n = el("span", "chip"); n.innerHTML = ICON.todo; n.append(document.createTextNode(subs.filter(x => x && x.d).length + "/" + subs.length)); n.title = "To-dos done"; row.append(n); }
@@ -582,7 +596,7 @@
     if(dayData.off){ ul.append(el("li", "empty", "No calendar for this workspace.")); }
     else if(dayData.error){ ul.append(el("li", "empty", "Couldn't load your calendar.")); }
     const m = meetingsList();
-    if(!dayData.off && !dayData.error && !m.length) ul.append(el("li", "empty", "Nothing on the calendar today."));
+    if(!dayData.off && !dayData.error && !m.length) ul.append(el("li", "empty", "Nothing on your calendar today."));
     const asks = items.filter(i => i.section === "meeting");
     const used = new Set();
     const follow = feat("showFollowUp") ? sorted("ready").concat(sorted("waiting")) : [];
@@ -703,10 +717,10 @@
     btn.hidden = !mcp || !/^trig_[A-Za-z0-9]+$/.test(WS.updateTask || "");
     const running = s.state === "running" && Date.now() - (Number(s.startedAt) || 0) < 20 * 60 * 1000;
     btn.classList.toggle("busy", running);
-    if(!btn.dataset.local){ btn.disabled = running; lbl.textContent = running ? (WS.updatingLabel || "Updating…") : (WS.updateLabel || "Update"); }
+    if(!btn.dataset.local){ btn.disabled = running; lbl.textContent = running ? "Updating…" : "Update"; }
     const t = ms => new Date(ms).toLocaleTimeString("en-US", {hour: "numeric", minute: "2-digit"});
     const day = ms => { const d = new Date(ms), n = new Date(); return d.toDateString() === n.toDateString() ? t(ms) : d.toLocaleDateString("en-US", {weekday: "short"}) + " " + t(ms); };
-    st.textContent = running ? (WS.updatingLabel || "Updating…") : s.state === "done" && s.finishedAt ? "Updated " + day(Number(s.finishedAt)) : s.state === "error" && s.finishedAt ? "Last update had a problem" : "";
+    st.textContent = running ? "Updating…" : s.state === "done" && s.finishedAt ? "Updated " + day(Number(s.finishedAt)) : s.state === "error" && s.finishedAt ? "Last update had a problem" : "";
     $("updateTip").textContent = s.summary || "";
   }
   $("updateState").addEventListener("click", e => { e.stopPropagation(); $("updateTip").classList.toggle("show"); });
@@ -720,7 +734,7 @@
       lbl.textContent = "Starting…";
       await mcp.callTool(CFG.remoteServer || "Claude Code Remote", "fire_trigger", {trigger_id: w.updateTask}, {cache: false});
       if(w === WS) statusDoc = {state: "running", startedAt: Date.now()};
-      toast((linked ? "Linked " + linked + " chat" + (linked === 1 ? "" : "s") + ". " : "") + (w.updateStartedMsg || "Updating now. New items show up in a few minutes."));
+      toast((linked ? "Linked " + linked + " chat" + (linked === 1 ? "" : "s") + ". " : "") + "Updating. New items show up here in a few minutes.");
     } catch(e){
       const c = e && e.code;
       toast(c === "server_not_connected" || c === "needs_reauth" ? "Reconnect Claude Code Remote in Settings → Connectors." :
@@ -741,11 +755,11 @@
     const use = n => (window.claude && window.claude.use) ? window.claude.use(n).catch(() => null) : Promise.resolve(null);
     [db, mcp] = await Promise.all([use("db"), use("mcp")]);
     if(!mcp){ canWrite = false; applyWorkspace(WS); $("refreshed").textContent = "Open this page in Claude to see your dashboard."; return; }
-    setStatus("Loading your to-dos…");
+    if(!cache[WS.id] && !readCache(WS.id)) setStatus("Loading your to-dos…");
     applyWorkspace(WS);
     setInterval(loadTasks, 120000);
     let calDay = new Date().toDateString();
     setInterval(() => { if(new Date().toDateString() !== calDay){ calDay = new Date().toDateString(); loadCalendar(); $("date").textContent = new Date().toLocaleDateString("en-US", {weekday: "long", month: "long", day: "numeric"}); } $("refreshed").textContent = greeting(); renderStatus(); }, 60000);
-    document.addEventListener("visibilitychange", () => { if(!document.hidden) loadTasks(); });
+    document.addEventListener("visibilitychange", () => { if(!document.hidden && Date.now() - lastLoad > 30000) loadTasks(); });
   })();
 })();

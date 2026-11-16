@@ -17,7 +17,7 @@ const TASKS = {
     {id: "b", content: "Voice inbox", description: "Waiting on: Naomi\nContext:\n- iPad first", labels: ["Waiting"], addedAt: "2020-01-01T00:00:00Z"}
   ],
   T1: [
-    {id: "t", content: "Picture Recall", description: "Figma: https://www.figma.com/design/x\nChat: https://claude.ai/chat/1\nTighten spacing", labels: ["In progress"], addedAt: now},
+    {id: "t", content: "Picture Recall", description: "Figma: https://www.figma.com/design/x\nNotion: https://www.notion.so/x\nChat: https://claude.ai/chat/1\nTighten spacing", labels: ["In progress"], addedAt: now},
     {id: "tq", content: "Which icon set?", parentId: "t", labels: ["Question"], addedAt: now},
     {id: "ts", content: "Rename tags", parentId: "t", description: "- Use 'Treatment tags'", labels: [], addedAt: now},
     {id: "h", content: "Category Connections", description: "", labels: ["Handoff"], addedAt: now},
@@ -55,14 +55,15 @@ const LABEL_NAMES = {ready: "Paused"};
 await run("Personal + Tactus (this account)", {
   ownerName: "Jeremy", labels: LABEL_NAMES,
   workspaces: [
-    {id: "personal", name: "Personal", accent: "#2B8A6E", todoist: {projectId: "P1"}, sections: {ready: "Paused"}, updateTask: "trig_A"},
-    {id: "tactus", name: "Tactus", accent: "#3A5BD9", todoist: {projectId: "T1"}, sections: {ready: "Ready to show"}, calendar: {hide: ["Time Blocking"]}, updateTask: "trig_B",
+    {id: "personal", name: "Personal", accent: "#3A5BD9", todoist: {projectId: "P1"}, updateTask: "trig_A"},
+    {id: "tactus", name: "Tactus", accent: "#7B4FD1", todoist: {projectId: "T1"}, labels: {ready: "Ready to show"}, calendar: {hide: ["Time Blocking"]}, updateTask: "trig_B",
       features: {handoff: true, meetingAsks: true, showFollowUp: true, chatLink: false}}
   ]
 }, async ({d, text, calls, w, writes}) => {
   check(text("#wsSwitch").includes("Personal") && text("#wsSwitch").includes("Tactus"), "workspace switcher shows both");
   check(text("#list-upcoming").includes("Organize Notion") && text("#list-upcoming").includes("Deeper step"), "personal to-do with nested subtasks");
   check(text("#list-waiting").includes("Voice inbox") && text("#list-waiting").includes("Naomi"), "waiting on shows name");
+  check(text("#main").includes("Paused") && text("#main").includes("Waiting") && !text("#main").includes("Ready to show"), "personal section names match labels");
   check(!d.getElementById("list-handoff"), "no handoff section in Personal");
   check(text("#meetings").includes("Time Blocking"), "personal shows all events");
   // main checkbox completes
@@ -73,7 +74,7 @@ await run("Personal + Tactus (this account)", {
   check(text("#list-today").includes("Picture Recall"), "tactus task in In progress");
   check(text("#main").includes("Ready to show"), "tactus section name");
   check(text("#list-handoff").includes("Category Connections") && text("#list-handoff").includes("Copy handoff prompt"), "handoff section + prompt button");
-  check(text("#list-today").includes("Figma") && text("#list-today").includes("Questions · 1 open"), "figma chip and questions fold");
+  check(text("#list-today").includes("Figma") && text("#list-today").includes("Notes") && text("#list-today").includes("Questions · 1 open"), "figma + notion chips and questions fold");
   check(!text("#list-today .subs-box").includes("Which icon set") && text("#list-today .subs-box").includes("Rename tags"), "questions kept out of the checklist");
   check(text("#meetings").includes("Ask about pricing page"), "meeting ask under its meeting");
   check(!text("#meetings").includes("Time Blocking"), "hidden calendar events");
@@ -82,13 +83,13 @@ await run("Personal + Tactus (this account)", {
   const item = d.querySelector("#list-today .item");
   item.querySelector(".more").click(); item.querySelector(".menu button").click(); await wait(400);
   const up = writes().find(c => c[1] === "update-tasks" && c[2].tasks[0].id === "t");
-  check(up && JSON.stringify(up[2].tasks[0].labels) === '["Paused"]', "Ready to show writes the Paused label");
+  check(up && JSON.stringify(up[2].tasks[0].labels) === '["Ready to show"]', "Ready to show writes the Ready to show label");
   check(text("#list-ready").includes("Picture Recall"), "moved card shows in Ready to show");
 });
 
 await run("Pelicargo-style (one workspace, other account)", {
   ownerName: "Jer",
-  workspaces: [{id: "pelicargo", name: "Pelicargo", todoist: {projectId: "T1"}, sections: {ready: "Ready to show"}, features: {handoff: true, meetingAsks: true, showFollowUp: true}, updateTask: "trig_C"}]
+  workspaces: [{id: "pelicargo", name: "Pelicargo", accent: "#E8710A", todoist: {projectId: "T1"}, labels: {ready: "Ready to show"}, features: {handoff: true, meetingAsks: true, showFollowUp: true}, updateTask: "trig_C"}]
 }, async ({d, text}) => {
   check(d.getElementById("wsSwitch").hidden, "no switcher with one workspace");
   check(!!d.getElementById("list-handoff"), "handoff section present");

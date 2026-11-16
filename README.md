@@ -21,14 +21,14 @@ Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml
 {
   title: "Dashboard",
   ownerName: "Jeremy",
-  labels: { ready: "Paused" },          // optional: Todoist label names (defaults below)
+  labels: { ready: "Paused" },          // optional: Todoist label names for every workspace (defaults below)
   workspaces: [
     {
       id: "personal", name: "Personal", accent: "#2B8A6E",
       todoist: { projectId: "…" },       // or projectIds: [...]
-      sections: { ready: "Paused" },      // display names; ids are fixed
+      labels: { ready: "Ready to show" }, // optional: this workspace's label names (= section names)
       calendar: { ids: ["primary"], hide: ["Time Blocking"] },   // or false
-      updateTask: "trig_…", updateLabel: "Sort inbox",
+      updateTask: "trig_…",
       features: { handoff: false, meetingAsks: false, showFollowUp: false, chatLink: false }
     }
   ]
@@ -37,9 +37,13 @@ Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml
 
 The page's database (only used for the update button's status line) is read at `meta/status-<workspace id>`.
 
+**Loading:** the page shows the last tasks and today's calendar it saw (saved in the browser) instantly, then refreshes from Todoist in the background: on open, every 2 minutes, and when you come back to the tab after 30+ seconds.
+
 The page's declared capabilities must include `mcp` with Todoist (`find-tasks`, `find-completed-tasks`, `update-tasks`, `complete-tasks`, `uncomplete-tasks`, `delete-object`), Google Calendar (`list_events`), Claude Code Remote (`fire_trigger`), plus `host:claude_browser` (`preview_start`, `find`) if `chatLink` is on, and `db`.
 
 ## Todoist conventions
+
+**Wording is the same everywhere:** a section's name on the dashboard is its Todoist label name. The only exception is the `ready` section: "Paused" for personal stuff, "Ready to show" for client work (set with the workspace's `labels.ready`). The update button is always "Update" and the side rail is always "Today".
 
 **Sections come from labels** (one status label per task; none = To do):
 
@@ -47,9 +51,9 @@ The page's declared capabilities must include `mcp` with Todoist (`find-tasks`, 
 | --- | --- | --- |
 | `upcoming` | (no status label) | To do |
 | `today` | `In progress` | In progress |
-| `ready` | `Paused` | Paused / Ready to show |
-| `waiting` | `Waiting` | Waiting on others |
-| `handoff` | `Handoff` | Handoff prep (feature `handoff`) |
+| `ready` | `Paused` (client work: `Ready to show`) | same as the label |
+| `waiting` | `Waiting` | Waiting |
+| `handoff` | `Handoff` | Handoff (feature `handoff`) |
 | `later` | `Later` | Later |
 | `meeting` | `Ask` | Under its meeting in the side rail (feature `meetingAsks`) |
 | `done` | completed in Todoist | Completed (last 7 days) |
@@ -60,6 +64,7 @@ The page's declared capabilities must include `mcp` with Todoist (`find-tasks`, 
 Waiting on: Jon
 Link: https://…          main source (Slack thread, Gmail, Fathom call)
 Figma: https://…
+Notion: https://…         project notes / longer docs (shows a Notes chip)
 Chat: https://claude.ai/chat/…
 Meeting: Jeremy-Tactus UX   for Ask tasks: the meeting title it belongs to
 One or two lines of note.
