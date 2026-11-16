@@ -6,13 +6,33 @@
       "id": "pelicargo",
       "name": "Pelicargo",
       "accent": "#E8772E",
-      "todoist": { "projectId": "6fhCm5PfFg69j82G" },
-      "labels": { "ready": "Ready to show" },
-      "calendar": { "ids": ["primary"], "acceptedOnly": true },
+      "todoist": {
+        "projectId": "6fhCm5PfFg69j82G"
+      },
+      "labels": {
+        "ready": "Ready to show"
+      },
+      "calendar": {
+        "ids": [
+          "primary"
+        ],
+        "acceptedOnly": true
+      },
       "updateTask": "PELICARGO_UPDATE_TASK_ID",
-      "features": { "handoff": true, "meetingAsks": true, "showFollowUp": true, "chatLink": true, "kickoff": true },
-      "notes": { "dataSource": "PELICARGO_NOTES_DATA_SOURCE", "all": true },
-      "kickoffKind": "feature"
+      "features": {
+        "handoff": true,
+        "meetingAsks": true,
+        "showFollowUp": true,
+        "chatLink": true,
+        "kickoff": true
+      },
+      "notes": {
+        "dataSource": "41a9451b-d62b-81a8-afc4-000b728bbd12",
+        "all": true,
+        "figmaProp": "Figma"
+      },
+      "kickoffKind": "ticket",
+      "kickoffPrompt": "{title}. Kick off this ticket.\n{links}"
     }
   ]
 }
