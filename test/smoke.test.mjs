@@ -21,7 +21,7 @@ const TASKS = {
     {id: "tq", content: "Which icon set?", parentId: "t", labels: ["Question"], addedAt: now},
     {id: "ts", content: "Rename tags", parentId: "t", description: "- Use 'Treatment tags'", labels: [], addedAt: now},
     {id: "h", content: "Category Connections", description: "", labels: ["Handoff"], addedAt: now},
-    {id: "new1", content: "Remembering Numbers", description: "Figma: https://www.figma.com/design/y", labels: [], addedAt: now},
+    {id: "new1", content: "Remembering Numbers", description: "Figma: https://www.figma.com/design/y\nAirtable: https://airtable.com/app/tbl/rec1", labels: [], addedAt: now},
     {id: "ask", content: "Ask about pricing page", description: "Meeting: Jeremy-Tactus UX", labels: ["Ask"], addedAt: now}
   ]
 };
@@ -88,7 +88,8 @@ await run("Personal + Tactus (this account)", {
   check(!text("#list-today").includes("Kick off"), "no Kick off outside To do");
   { let opened = ""; w.open = u => { opened = u; return {}; };
     [...d.querySelectorAll("#list-upcoming button.go")].find(b => b.textContent === "Kick off").click(); await wait(100);
-    check(opened.startsWith("https://claude.ai/new?q=") && decodeURIComponent(opened).includes("Remembering Numbers") && decodeURIComponent(opened).includes("figma.com/design/y") && decodeURIComponent(opened).includes("treatment"), "Kick off opens a new chat with the prompt"); }
+    check(opened.startsWith("https://claude.ai/new?q=") && decodeURIComponent(opened).includes("Remembering Numbers") && decodeURIComponent(opened).includes("figma.com/design/y") && decodeURIComponent(opened).includes("treatment") && decodeURIComponent(opened).includes("airtable.com/app/tbl/rec1"), "Kick off opens a new chat with the prompt"); }
+  check(text("#list-upcoming").includes("Spec"), "Airtable spec chip");
   check(d.querySelector('#list-today a.link-pill')?.href === "https://fathom.video/share/abc", "markdown-style Link line opens the real link");
   check(!text("#meetings").includes("Time Blocking"), "hidden calendar events");
   check(w.location.hash === "#tactus", "hash follows workspace");

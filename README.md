@@ -70,6 +70,7 @@ Waiting on: Jon
 Link: https://…          main source (Slack thread, Gmail, Fathom call)
 Figma: https://…
 Notion: https://…         project notes / longer docs (shows a Notes chip)
+Airtable: https://…       spec record, e.g. the Tactus Treatments table (shows a Spec chip)
 Chat: https://claude.ai/chat/…
 Meeting: Jeremy-Tactus UX   for Ask tasks: the meeting title it belongs to
 One or two lines of note.

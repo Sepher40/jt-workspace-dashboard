@@ -28,6 +28,7 @@
     link: SVG('<path d="M7 9a3 3 0 0 0 4.2 0l2-2a3 3 0 0 0-4.2-4.2l-.6.6M9 7a3 3 0 0 0-4.2 0l-2 2a3 3 0 0 0 4.2 4.2l.6-.6"/>'),
     todo: SVG('<rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/><path d="M5.5 8l1.8 1.8L10.5 6"/>'),
     notes: SVG('<path d="M4 2.5h6l2.5 2.5v8.5H4z"/><path d="M6.5 7h4M6.5 9.5h4"/>'),
+    spec: SVG('<rect x="2.5" y="2.5" width="11" height="11" rx="1.5"/><path d="M2.5 6.5h11M2.5 10h11M6.5 6.5v7"/>'),
     cal: SVG('<rect x="2.5" y="3.5" width="11" height="10" rx="2"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/>')
   };
   const CHEV = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -140,7 +141,7 @@
     try { return JSON.parse(txt); } catch(_){ const m = txt.match(/\{[\s\S]*\}/); try { return m ? JSON.parse(m[0]) : {}; } catch(_){ return {}; } }
   };
   const td = (tool, input) => mcp.callTool(CFG.todoistServer || "Todoist", tool, input, {cache: false});
-  const KEYLINE = /^(Waiting on|Link|Figma|Notion|Chat|Meeting):[ \t]*(.*)$/;
+  const KEYLINE = /^(Waiting on|Link|Figma|Notion|Airtable|Chat|Meeting):[ \t]*(.*)$/;
   function splitDesc(desc){
     const [head, ctx = ""] = String(desc || "").split(/^Context:[ \t]*$/m);
     const keys = {}, rest = [];
@@ -177,7 +178,7 @@
     return {id: t.id, title: t.content, description: String(t.description || ""), labels, section, order: orderMap[t.id] ?? (i + 1), projectId: t.projectId,
       note, log, subtasks, questions, _server: subtasks.concat(questions).map(x => ({id: x.id, d: x.d})),
       waitingOn: keys["Waiting on"] || "", url: safeUrl(keys.Link) || "https://app.todoist.com/app/task/" + t.id, todoistUrl: "https://app.todoist.com/app/task/" + t.id,
-      figma: safeUrl(keys.Figma), notion: safeUrl(keys.Notion), chat: safeUrl(keys.Chat), meeting: keys.Meeting || "", due, overdue, newAt: Date.parse(t.addedAt) || 0, seenAt: seenMap[t.id] || 0};
+      figma: safeUrl(keys.Figma), notion: safeUrl(keys.Notion), airtable: safeUrl(keys.Airtable), chat: safeUrl(keys.Chat), meeting: keys.Meeting || "", due, overdue, newAt: Date.parse(t.addedAt) || 0, seenAt: seenMap[t.id] || 0};
   }
   function projectIds(){ const t = WS.todoist || {}; return [].concat(t.projectIds || [], t.projectId || []).filter(Boolean); }
   let loadSeq = 0;
@@ -359,6 +360,7 @@
     const f = safeUrl(it.figma), c = safeUrl(it.chat);
     if(f) pill(f, o.compact ? "" : "Figma", ICON.figma, "Figma");
     const nn = safeUrl(it.notion); if(nn) pill(nn, o.compact ? "" : "Notes", ICON.notes, "Notion notes");
+    const at = safeUrl(it.airtable); if(at) pill(at, o.compact ? "" : "Spec", ICON.spec, "Airtable spec");
     if(c){ pill(c, o.compact ? "" : "Chat", ICON.chat, "Claude chat"); const a = row.lastChild; a.onclick = e => { e.preventDefault(); e.stopPropagation(); openChat(c); }; }
     const subs = it.subtasks || [];
     if(subs.length){ const n = el("span", "chip"); n.innerHTML = ICON.todo; n.append(document.createTextNode(subs.filter(x => x && x.d).length + "/" + subs.length)); n.title = "To-dos done"; row.append(n); }
@@ -367,7 +369,7 @@
   // "Kick off" on new To do items that don't have a chat yet: opens a new Claude chat with a kickoff prompt.
   const DEFAULT_KICKOFF = "Let's kick off the design of {title}.\n{links}\nStart by looking at what's on the Figma page and in the notes, then give me: a short summary of the {kind} (goal, steps, levels), open questions to ask the team, and a plan for Round 1.";
   function kickoffPrompt(it){
-    const links = [["Figma page", it.figma], ["Notes", it.notion], ["Source", it.url !== it.todoistUrl ? it.url : null], ["Todoist task", it.todoistUrl]]
+    const links = [["Figma page", it.figma], ["Spec (Airtable)", it.airtable], ["Notes", it.notion], ["Source", it.url !== it.todoistUrl ? it.url : null], ["Todoist task", it.todoistUrl]]
       .filter(x => safeUrl(x[1])).map(x => x[0] + ": " + x[1]).join("\n");
     const note = (priorityOf(it.note) ? priorityOf(it.note).rest : it.note) || "";
     return String(WS.kickoffPrompt || DEFAULT_KICKOFF).replace(/\{title\}/g, it.title || "").replace(/\{links\}/g, links + (note ? "\n" + note : ""))
