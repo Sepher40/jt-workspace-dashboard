@@ -9,9 +9,11 @@ The dashboard is a **consolidator**: it stores no tasks. To-dos live in Todoist,
 | Channel | Who uses it | When it updates |
 | --- | --- | --- |
 | `latest` | Personal + Tactus dashboard | Every push to `main` (after tests pass) |
-| `stable` | Pelicargo dashboard | Daily, once a release has been live 24 h. Run **Promote to stable** by hand to ship sooner. |
+| `stable` | Pelicargo dashboard | Daily, once a release has been live 24 h. Run the **Publish** workflow by hand ("Run workflow") to ship sooner. |
 
-Rollback: re-run **Publish** on an older commit, or revert the commit on `main`.
+Rollback: revert the bad commit on `main` (a new version is published automatically).
+
+Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml` (keep all publishing in that one file).
 
 ## Shell config (`window.DASHBOARD_CONFIG`)
 
