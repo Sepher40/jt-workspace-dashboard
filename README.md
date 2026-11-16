@@ -29,6 +29,7 @@ Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml
       labels: { ready: "Ready to show" }, // optional: this workspace's label names (= section names)
       calendar: { ids: ["primary"], hide: ["Time Blocking"] },   // or false
       updateTask: "trig_…",
+      notes: { dataSource: "collection id", minSteps: 3 },   // automatic Notion notes pages (or all: true)
       features: { handoff: false, meetingAsks: false, showFollowUp: false, chatLink: false }
     }
   ]
@@ -36,6 +37,8 @@ Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml
 ```
 
 The page's database (only used for the update button's status line) is read at `meta/status-<workspace id>`.
+
+**Project notes pages:** a workspace with `notes` gets a Notion page per project, created by the page itself (no Claude tokens) in that Notion database: every task when `notes.all` is true (client work), otherwise once a task has `notes.minSteps` steps (default 3). The page gets the task's links, note, context and steps, the task gets a `Notion:` line (Notes chip), and completing the task sets the page's Status to Done. The update tasks add longer notes to the page's Notes section. Needs `Notion` → `notion-create-pages`, `notion-update-page` in the page's capabilities.
 
 **Loading:** the page shows the last tasks and today's calendar it saw (saved in the browser) instantly, then refreshes from Todoist in the background: on open, every 2 minutes, and when you come back to the tab after 30+ seconds.
 

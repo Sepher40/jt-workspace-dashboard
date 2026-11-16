@@ -3,19 +3,55 @@
   "ownerName": "Jeremy",
   "workspaces": [
     {
-      "id": "personal", "name": "Personal", "accent": "#3A5BD9",
-      "todoist": { "projectId": "6j2jrQ29XqJXw24H" },
-      "calendar": { "ids": ["primary"] },
+      "id": "personal",
+      "name": "Personal",
+      "accent": "#3A5BD9",
+      "todoist": {
+        "projectId": "6j2jrQ29XqJXw24H"
+      },
+      "calendar": {
+        "ids": [
+          "primary"
+        ]
+      },
       "updateTask": "trig_0169xd4ogHFW8ZWbeYvP2zmg",
-      "features": {}
+      "features": {},
+      "notes": {
+        "dataSource": "41a9451b-d62b-8106-b2a0-000b6e92d986",
+        "minSteps": 3
+      }
     },
     {
-      "id": "tactus", "name": "Tactus", "accent": "#7B4FD1",
-      "todoist": { "projectId": "6fhCm5rVqgvqH8cq" },
-      "labels": { "ready": "Ready to show" },
-      "calendar": { "ids": ["primary"], "hide": ["Time Blocking"], "acceptedOnly": true },
+      "id": "tactus",
+      "name": "Tactus",
+      "accent": "#7B4FD1",
+      "todoist": {
+        "projectId": "6fhCm5rVqgvqH8cq"
+      },
+      "labels": {
+        "ready": "Ready to show"
+      },
+      "calendar": {
+        "ids": [
+          "primary"
+        ],
+        "hide": [
+          "Time Blocking"
+        ],
+        "acceptedOnly": true
+      },
       "updateTask": "trig_01DBW9oVSCxkQhczvXH6WtRF",
-      "features": { "handoff": true, "meetingAsks": true, "showFollowUp": true, "chatLink": true }
+      "features": {
+        "handoff": true,
+        "meetingAsks": true,
+        "showFollowUp": true,
+        "chatLink": true
+      },
+      "notes": {
+        "dataSource": "41a9451b-d62b-8158-8a00-000b6cf29e32",
+        "all": true,
+        "figmaProp": "Figma"
+      }
     }
   ]
 }

@@ -200,6 +200,7 @@
         done.forEach(t => next.push({id: t.id, title: t.content, section: "done", _completed: true, labels: t.labels || [], description: String(t.description || ""), touchedAt: Date.parse(t.completedAt) || 0, subtasks: [], questions: [], _server: []}));
       });
       items = next; cache[w.id] = next; saveCache(w.id, next); setStatus(""); render();
+      ensureNotesPages(w).catch(() => {});
     } catch(e){
       if(w !== WS) return;
       const c = e && e.code;
@@ -225,7 +226,7 @@
       let desc = it.description, labels = null;
       if("section" in patch){
         const s = patch.section;
-        if(s === "done"){ await td("complete-tasks", {ids: [id]}); it._completed = true; }
+        if(s === "done"){ await td("complete-tasks", {ids: [id]}); it._completed = true; markNotesDone(it); }
         else if(s === "removed"){ await td("delete-object", {type: "task", id}); }
         else {
           if(it._completed){ await td("uncomplete-tasks", {ids: [id]}); it._completed = false; }
@@ -235,6 +236,7 @@
         }
       } else if("waitingOn" in patch) desc = setLine(desc, "Waiting on", patch.waitingOn);
       if("chat" in patch) desc = setLine(desc, "Chat", patch.chat);
+      if("notion" in patch) desc = setLine(desc, "Notion", patch.notion);
       const up = {id};
       if(labels){ up.labels = labels; it.labels = labels; }
       if(desc !== it.description){ up.description = desc; it.description = desc; }
@@ -248,6 +250,52 @@
       setStatus(e && (e.code === "server_not_connected" || e.code === "needs_reauth") ? "Reconnect Todoist in Settings → Connectors." : "Couldn't save that change to Todoist. Try again in a moment.");
     }
     scheduleRefresh();
+  }
+
+  /* ---------- automatic Notion notes pages for projects ----------
+     A workspace with notes:{dataSource} gets one Notion page per project task, created by the page itself (no Claude tokens).
+     notes.all = every task is a project (client work); otherwise a task becomes a project at notes.minSteps steps (default 3). */
+  const notionCall = (tool, input) => mcp.callTool(CFG.notionServer || "Notion", tool, input, {cache: false});
+  const notesTried = store("dash.notesTried", {});
+  function isProject(w, it){
+    const n = w.notes; if(!n || !n.dataSource) return false;
+    if(it.notion || !["today", "ready", "waiting", "handoff", "upcoming", "later"].includes(it.section)) return false;
+    return n.all || (it.subtasks || []).length >= (n.minSteps || 3);
+  }
+  function notesMarkdown(it){
+    const out = [];
+    const links = [["Todoist", it.todoistUrl], ["Figma", it.figma], ["Source", it.url !== it.todoistUrl ? it.url : null], ["Chat", it.chat]].filter(x => safeUrl(x[1]));
+    if(links.length) out.push(links.map(([k, u]) => "[" + k + "](" + u + ")").join(" · "), "");
+    const pr = priorityOf(it.note); const note = pr ? pr.rest : it.note;
+    if(note) out.push(note, "");
+    if((it.log || []).length){ out.push("## Context"); it.log.forEach(x => out.push("- " + x.t)); out.push(""); }
+    if((it.subtasks || []).length){ out.push("## Steps when this page was made"); it.subtasks.forEach(x => out.push("- [" + (x.d ? "x" : " ") + "] " + x.t)); out.push(""); }
+    out.push("## Notes", "Longer notes, meeting discussions and decisions for this project go here.");
+    return out.join("\n");
+  }
+  let notesBusy = false;
+  async function ensureNotesPages(w){
+    if(notesBusy || !mcp || !w.notes || !w.notes.dataSource) return;
+    const due = items.filter(it => isProject(w, it) && !(Date.now() - (notesTried[it.id] || 0) < 24 * 3600 * 1000)).slice(0, 3);
+    if(!due.length) return;
+    notesBusy = true;
+    try {
+      for(const it of due){
+        notesTried[it.id] = Date.now(); save("dash.notesTried", notesTried);
+        const props = {Name: it.title, Status: "Active", Todoist: it.todoistUrl};
+        if(w.notes.figmaProp && it.figma) props[w.notes.figmaProp] = it.figma;
+        const r = await notionCall("notion-create-pages", {parent: {data_source_id: w.notes.dataSource}, pages: [{properties: props, content: notesMarkdown(it)}], allow_async: false});
+        const txt = JSON.stringify(r && (r.payload || r.content) || "");
+        const m = txt.match(/https:\/\/(?:app\.|www\.)?notion\.(?:so|com)\/[^\s"'<>)\\]+/);
+        if(!m) continue;
+        const url = m[0].replace(/\?pvs=\d+$/, "");
+        it.notion = url; await write(it.id, {notion: url});
+      }
+    } finally { notesBusy = false; }
+  }
+  async function markNotesDone(it){
+    if(!it.notion || !mcp || !(WS.notes && WS.notes.dataSource)) return;
+    try { await notionCall("notion-update-page", {page_id: it.notion, command: "update_properties", properties: {Status: "Done"}}); } catch(_){}
   }
 
   /* ---------- calendar ---------- */

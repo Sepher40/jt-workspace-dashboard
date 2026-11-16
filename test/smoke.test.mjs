@@ -37,6 +37,7 @@ async function run(name, config, steps, opts = {}){
       if(t === "find-tasks") return txt({tasks: TASKS[i.projectId] || []});
       if(t === "find-completed-tasks") return txt({tasks: []});
       if(t === "list_events") return txt({events: EVENTS});
+      if(t === "notion-create-pages") return txt({pages: [{id: "n1", url: "https://app.notion.com/p/abc123?pvs=204"}]});
       return txt({});
     }} : n === "db" ? null : null};
   }});
@@ -55,8 +56,8 @@ const LABEL_NAMES = {ready: "Paused"};
 await run("Personal + Tactus (this account)", {
   ownerName: "Jeremy", labels: LABEL_NAMES,
   workspaces: [
-    {id: "personal", name: "Personal", accent: "#3A5BD9", todoist: {projectId: "P1"}, updateTask: "trig_A"},
-    {id: "tactus", name: "Tactus", accent: "#7B4FD1", todoist: {projectId: "T1"}, labels: {ready: "Ready to show"}, calendar: {hide: ["Time Blocking"]}, updateTask: "trig_B",
+    {id: "personal", name: "Personal", accent: "#3A5BD9", todoist: {projectId: "P1"}, notes: {dataSource: "DS_P", minSteps: 3}, updateTask: "trig_A"},
+    {id: "tactus", name: "Tactus", accent: "#7B4FD1", todoist: {projectId: "T1"}, labels: {ready: "Ready to show"}, notes: {dataSource: "DS_T", all: true, figmaProp: "Figma"}, calendar: {hide: ["Time Blocking"]}, updateTask: "trig_B",
       features: {handoff: true, meetingAsks: true, showFollowUp: true, chatLink: false}}
   ]
 }, async ({d, text, calls, w, writes}) => {
@@ -73,6 +74,11 @@ await run("Personal + Tactus (this account)", {
   [...d.querySelectorAll("#wsSwitch button")].find(b => b.textContent === "Tactus").click(); await wait(300);
   check(text("#list-today").includes("Picture Recall"), "tactus task in In progress");
   check(text("#main").includes("Ready to show"), "tactus section name");
+  await wait(400);
+  const created = writes().filter(c => c[1] === "notion-create-pages");
+  check(created.length >= 1 && created.every(c => c[2].parent.data_source_id === "DS_T"), "notes pages created for Tactus projects only");
+  check(!created.some(c => c[2].pages[0].properties.Name === "Picture Recall"), "no notes page when the task already has one");
+  check(writes().some(c => c[1] === "update-tasks" && /Notion: https:\/\/app\.notion\.com\/p\/abc123(\n|$)/.test(c[2].tasks[0].description || "")), "Notion link written back to the task");
   check(text("#list-handoff").includes("Category Connections") && text("#list-handoff").includes("Copy handoff prompt"), "handoff section + prompt button");
   check(text("#list-today").includes("Figma") && text("#list-today").includes("Notes") && text("#list-today").includes("Questions · 1 open"), "figma + notion chips and questions fold");
   check(!text("#list-today .subs-box").includes("Which icon set") && text("#list-today .subs-box").includes("Rename tags"), "questions kept out of the checklist");
