@@ -85,7 +85,7 @@ await run("Personal + Tactus (this account)", {
   check(!text("#list-today .subs-box").includes("Which icon set") && text("#list-today .subs-box").includes("Rename tags"), "questions kept out of the checklist");
   check(text("#meetings").includes("Ask about pricing page"), "meeting ask under its meeting");
   check(text("#list-upcoming").includes("Remembering Numbers") && text("#list-upcoming").includes("Kick off"), "new to-do shows a Kick off button");
-  check(!text("#list-today").includes("Kick off"), "no Kick off outside To do");
+  check(!text("#list-today").includes("Kick off"), "no Kick off once a chat is linked");
   { let opened = ""; w.open = u => { opened = u; return {}; };
     [...d.querySelectorAll("#list-upcoming button.go")].find(b => b.textContent === "Kick off").click(); await wait(100);
     check(opened.startsWith("https://claude.ai/new?q=") && decodeURIComponent(opened).includes("Remembering Numbers") && decodeURIComponent(opened).includes("figma.com/design/y") && decodeURIComponent(opened).includes("treatment") && decodeURIComponent(opened).includes("airtable.com/app/tbl/rec1"), "Kick off opens a new chat with the prompt"); }

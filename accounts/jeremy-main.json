@@ -53,8 +53,9 @@
         "all": true,
         "figmaProp": "Figma"
       },
-      "kickoffKind": "treatment",
-      "kickoffPrompt": "Let's kick off the design of {title}, a new treatment in the Tactus VRC app.\n{links}\nShezena added reference screens to the Figma page. Start by reviewing them and the notes, then give me: a short summary of the treatment (goal, steps, levels), open questions for the team, and a plan for Round 1 (my first section on the Figma page will be \"Round 1\")."
+      "kickoffKind": "feature",
+      "kickoffPrompt": "Let's kick off the design of {title}, a {kind} in the Tactus VRC app.\n{links}\nStart by reviewing the Figma page (reference screens are usually there), the spec and the notes, then give me: a short summary of the {kind} (goal, flow, key screens or levels), open questions for the team, and a plan for Round 1 (my first section on the Figma page will be \"Round 1\").",
+      "kickoffKindSpec": "treatment"
     }
   ]
 }

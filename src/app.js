@@ -373,10 +373,10 @@
       .filter(x => safeUrl(x[1])).map(x => x[0] + ": " + x[1]).join("\n");
     const note = (priorityOf(it.note) ? priorityOf(it.note).rest : it.note) || "";
     return String(WS.kickoffPrompt || DEFAULT_KICKOFF).replace(/\{title\}/g, it.title || "").replace(/\{links\}/g, links + (note ? "\n" + note : ""))
-      .replace(/\{kind\}/g, WS.kickoffKind || "project").replace(/\{figma\}/g, it.figma || "").replace(/\{notion\}/g, it.notion || "").replace(/\{todoist\}/g, it.todoistUrl || "");
+      .replace(/\{kind\}/g, (it.airtable && WS.kickoffKindSpec) || WS.kickoffKind || "project").replace(/\{figma\}/g, it.figma || "").replace(/\{notion\}/g, it.notion || "").replace(/\{todoist\}/g, it.todoistUrl || "");
   }
   function kickoffEl(it, section){
-    if(!feat("kickoff") || section !== "upcoming" || it.chat) return null;
+    if(!feat("kickoff") || !["upcoming", "today"].includes(section) || safeUrl(it.chat)) return null;
     const wrap = el("div", "kick-wrap");
     const b = el("button", "go", "Kick off"); b.type = "button"; b.title = "Opens a new Claude chat with a prompt to start the design";
     b.onclick = async e => {
