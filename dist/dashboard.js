@@ -32,7 +32,8 @@
   };
   const CHEV = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   function el(tag, cls, text){ const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
-  function safeUrl(u){ return typeof u === "string" && /^https:\/\//.test(u) ? u : null; }
+  // Accepts a plain https link or a Markdown one like [title](https://…)
+  function safeUrl(u){ if(typeof u !== "string") return null; const m = u.match(/^\[[^\]]*\]\((https:\/\/[^\s)]+)\)/); if(m) return m[1]; return /^https:\/\/\S+$/.test(u.trim()) ? u.trim() : null; }
   const store = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "null") ?? d; } catch(_){ return d; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(_){} };
   function setStatus(msg){ const s = $("status"); s.textContent = msg || ""; s.hidden = !msg; }
