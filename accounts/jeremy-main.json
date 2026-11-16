@@ -54,7 +54,7 @@
         "figmaProp": "Figma"
       },
       "kickoffKind": "feature",
-      "kickoffPrompt": "Let's kick off the design of {title}, a {kind} in the Tactus VRC app.\n{links}\nStart by reviewing the Figma page (reference screens are usually there), the spec and the notes, then give me: a short summary of the {kind} (goal, flow, key screens or levels), open questions for the team, and a plan for Round 1 (my first section on the Figma page will be \"Round 1\").",
+      "kickoffPrompt": "Let's kick off the design of {title}, a {kind} in the Tactus VRC app.\n{links}\n1. Review the Figma page, the spec and the notes, then give me a short summary of the {kind} (goal, flow, key screens or levels) and open questions for the team.\n2. If the Figma page has Canva reference screens (large images, usually in a row), recreate each one as closely as you can as a real app screen in Figma, using the file's components, text styles and colours. The Canva images are much larger than our screens: use the frame size of the existing app screens in this file and scale the layout down to fit. Put them in a new section called \"Canva recreation\" next to the images, one frame per image in the same order, and don't move or change the images. Don't explore new designs yet. Tell me anything you couldn't match with an existing component.\n3. Then give me a plan for Round 1 (my first section on the Figma page will be \"Round 1\").",
       "kickoffKindSpec": "treatment"
     }
   ]
