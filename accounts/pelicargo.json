@@ -1,0 +1,18 @@
+{
+  "title": "Pelicargo Dashboard",
+  "ownerName": "Jeremy",
+  "workspaces": [
+    {
+      "id": "pelicargo",
+      "name": "Pelicargo",
+      "accent": "#E8772E",
+      "todoist": { "projectId": "6fhCm5PfFg69j82G" },
+      "labels": { "ready": "Ready to show" },
+      "calendar": { "ids": ["primary"], "acceptedOnly": true },
+      "updateTask": "PELICARGO_UPDATE_TASK_ID",
+      "features": { "handoff": true, "meetingAsks": true, "showFollowUp": true, "chatLink": true, "kickoff": true },
+      "notes": { "dataSource": "PELICARGO_NOTES_DATA_SOURCE", "all": true },
+      "kickoffKind": "feature"
+    }
+  ]
+}
