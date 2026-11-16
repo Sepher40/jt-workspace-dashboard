@@ -17,7 +17,7 @@ const TASKS = {
     {id: "b", content: "Voice inbox", description: "Waiting on: Naomi\nContext:\n- iPad first", labels: ["Waiting"], addedAt: "2020-01-01T00:00:00Z"}
   ],
   T1: [
-    {id: "t", content: "Picture Recall", description: "Figma: https://www.figma.com/design/x\nNotion: https://www.notion.so/x\nChat: https://claude.ai/chat/1\nTighten spacing", labels: ["In progress"], addedAt: now},
+    {id: "t", content: "Picture Recall", description: "Link: [Call](https://fathom.video/share/abc)\nFigma: https://www.figma.com/design/x\nNotion: https://www.notion.so/x\nChat: https://claude.ai/chat/1\nTighten spacing", labels: ["In progress"], addedAt: now},
     {id: "tq", content: "Which icon set?", parentId: "t", labels: ["Question"], addedAt: now},
     {id: "ts", content: "Rename tags", parentId: "t", description: "- Use 'Treatment tags'", labels: [], addedAt: now},
     {id: "h", content: "Category Connections", description: "", labels: ["Handoff"], addedAt: now},
@@ -83,6 +83,7 @@ await run("Personal + Tactus (this account)", {
   check(text("#list-today").includes("Figma") && text("#list-today").includes("Notes") && text("#list-today").includes("Questions · 1 open"), "figma + notion chips and questions fold");
   check(!text("#list-today .subs-box").includes("Which icon set") && text("#list-today .subs-box").includes("Rename tags"), "questions kept out of the checklist");
   check(text("#meetings").includes("Ask about pricing page"), "meeting ask under its meeting");
+  check(d.querySelector('#list-today a.link-pill')?.href === "https://fathom.video/share/abc", "markdown-style Link line opens the real link");
   check(!text("#meetings").includes("Time Blocking"), "hidden calendar events");
   check(w.location.hash === "#tactus", "hash follows workspace");
   // move to ready via menu

@@ -75,6 +75,8 @@ Context:
 - decision or background bullet
 ```
 
+**Project notes:** longer notes live in Notion, one page per project, linked from the task with the `Notion:` line (shown as a Notes chip). The update tasks create and maintain these pages: every Tactus task gets one; a personal task gets one once it has 3+ subtasks.
+
 **Subtasks** are the checklist; a subtask's description lines are its notes. Subtasks labelled `Question` show in the card's **Questions** fold instead (complete = answered). Priority p1–p3 shows as Urgent / High / Medium.
 
 ## Develop
