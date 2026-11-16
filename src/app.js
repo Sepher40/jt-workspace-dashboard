@@ -74,7 +74,8 @@
     render();
     if(!items.length && db){ readDbCache(w.id).then(list => { if(list && w === WS && !cache[w.id] && !items.length){ items = list; render(); } }); }
     clearTimeout(slowTimer);
-    if(!items.length && mcp) slowTimer = setTimeout(() => { if(!items.length && w === WS) setStatus("Loading your to-dos…"); }, 1500);
+    const known = !!cache[w.id] || !!stored; // an empty saved list still counts as loaded
+    if(!known && mcp) slowTimer = setTimeout(() => { if(!cache[w.id] && w === WS) setStatus("Loading your to-dos…"); }, 4000);
     if(mcp){ loadTasks(); loadCalendar(); }
   }
   let slowTimer = null;
