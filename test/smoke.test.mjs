@@ -93,7 +93,7 @@ await run("Personal + Tactus (this account)", {
     [...d.querySelectorAll("#list-upcoming button.go")].find(b => b.textContent === "Kick off").click(); await wait(100);
     check(opened.startsWith("https://claude.ai/new?q=") && decodeURIComponent(opened).includes("Remembering Numbers") && decodeURIComponent(opened).includes("figma.com/design/y") && decodeURIComponent(opened).includes("treatment") && decodeURIComponent(opened).includes("airtable.com/app/tbl/rec1"), "Kick off opens a new chat with the prompt");
     await wait(100); check(text("#list-today").includes("Remembering Numbers"), "Kick off moves the task to In progress"); }
-  check(text("#list-upcoming").includes("Airtable"), "Airtable spec chip");
+  check(text("#list-today").includes("Airtable"), "Airtable spec chip");
   check(d.querySelector('#list-today a.link-pill')?.href === "https://fathom.video/share/abc", "markdown-style Link line opens the real link");
   check(!text("#meetings").includes("Time Blocking"), "hidden calendar events");
   check(w.location.hash === "#tactus", "hash follows workspace");
