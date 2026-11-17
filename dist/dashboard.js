@@ -400,6 +400,9 @@
       const msg = kickoffPrompt(it); let copied = false, opened = false;
       try { await navigator.clipboard.writeText(msg); copied = true; } catch(_){}
       try { const w = window.open("https://claude.ai/new?q=" + encodeURIComponent(msg), "_blank"); if(w){ try { w.opener = null; } catch(_){} opened = true; } } catch(_){}
+      let moved = false;
+      if(opened && it.section === "upcoming"){ const patch = {section: "today", order: nextOrder("today")}; Object.assign(it, patch); render(); moved = true; write(it.id, patch); }
+      if(moved){ toast("New chat opened and moved to " + LABEL.today + "." + (copied ? " The prompt is also copied, in case the chat box is empty." : "")); return; }
       toast(opened ? "New chat opened with the kickoff prompt." + (copied ? " It's also copied, in case the chat box is empty." : "") : copied ? "Kickoff prompt copied. Paste it into a new chat." : "Couldn't open a chat here. Prompt: " + msg.replace(/\n/g, " "));
     };
     wrap.append(b); return wrap;
@@ -797,7 +800,9 @@
     for(const it of candidates){
       const url = found.get(nameOf(it).toUpperCase());
       if(!url){ tried[it.id] = Date.now(); continue; }
-      it.chat = url; await write(it.id, {chat: url}); n++;
+      const patch = {chat: url};
+      if(it.section === "upcoming"){ patch.section = "today"; patch.order = nextOrder("today"); }
+      Object.assign(it, patch); await write(it.id, patch); n++;
     }
     save("dash.chatTried", tried);
     return n;
