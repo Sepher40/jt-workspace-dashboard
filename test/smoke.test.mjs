@@ -84,7 +84,7 @@ await run("Personal + Tactus (this account)", {
   check(!created.some(c => c[2].pages[0].properties.Name === "Picture Recall"), "no notes page when the task already has one");
   check(writes().some(c => c[1] === "update-tasks" && /Notion: https:\/\/app\.notion\.com\/p\/abc123(\n|$)/.test(c[2].tasks[0].description || "")), "Notion link written back to the task");
   check(text("#list-handoff").includes("Category Connections") && text("#list-handoff").includes("Copy handoff prompt"), "handoff section + prompt button");
-  check(text("#list-today").includes("Figma") && text("#list-today").includes("Notes") && text("#list-today").includes("Questions · 1 open"), "figma + notion chips and questions fold");
+  check(text("#list-today").includes("Figma") && text("#list-today").includes("Notion") && text("#list-today").includes("Fathom") && text("#list-today").includes("Claude") && text("#list-today").includes("Questions · 1 open"), "figma + notion chips and questions fold");
   check(!text("#list-today .subs-box").includes("Which icon set") && text("#list-today .subs-box").includes("Rename tags"), "questions kept out of the checklist");
   check(text("#meetings").includes("Ask about pricing page"), "meeting ask under its meeting");
   check(text("#list-upcoming").includes("Remembering Numbers") && text("#list-upcoming").includes("Kick off"), "new to-do shows a Kick off button");
@@ -92,7 +92,7 @@ await run("Personal + Tactus (this account)", {
   { let opened = ""; w.open = u => { opened = u; return {}; };
     [...d.querySelectorAll("#list-upcoming button.go")].find(b => b.textContent === "Kick off").click(); await wait(100);
     check(opened.startsWith("https://claude.ai/new?q=") && decodeURIComponent(opened).includes("Remembering Numbers") && decodeURIComponent(opened).includes("figma.com/design/y") && decodeURIComponent(opened).includes("treatment") && decodeURIComponent(opened).includes("airtable.com/app/tbl/rec1"), "Kick off opens a new chat with the prompt"); }
-  check(text("#list-upcoming").includes("Spec"), "Airtable spec chip");
+  check(text("#list-upcoming").includes("Airtable"), "Airtable spec chip");
   check(d.querySelector('#list-today a.link-pill')?.href === "https://fathom.video/share/abc", "markdown-style Link line opens the real link");
   check(!text("#meetings").includes("Time Blocking"), "hidden calendar events");
   check(w.location.hash === "#tactus", "hash follows workspace");

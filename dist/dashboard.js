@@ -356,6 +356,15 @@
     let copied = false; try { await navigator.clipboard.writeText(url); copied = true; } catch(_){}
     toast(copied ? "Couldn't open the chat here. Its link is copied." : "Couldn't open the chat here: " + url);
   }
+  // The Link chip is named after the app it opens (Fathom, Slack, Gmail...), not just "Link".
+  const SOURCES = [[/(^|\.)fathom\.video$/, "Fathom"], [/(^|\.)slack\.com$/, "Slack"], [/^mail\.google\.com$/, "Gmail"], [/^docs\.google\.com$/, "Google Docs"], [/^drive\.google\.com$/, "Google Drive"], [/^calendar\.google\.com$/, "Calendar"],
+    [/(^|\.)todoist\.com$/, "Todoist"], [/(^|\.)figma\.com$/, "Figma"], [/(^|\.)notion\.(so|com)$/, "Notion"], [/(^|\.)airtable\.com$/, "Airtable"], [/(^|\.)linear\.app$/, "Linear"], [/(^|\.)claude\.ai$/, "Claude"],
+    [/(^|\.)canva\.com$/, "Canva"], [/(^|\.)github\.com$/, "GitHub"], [/(^|\.)granola\.(ai|so)$/, "Granola"], [/(^|\.)loom\.com$/, "Loom"], [/(^|\.)zoom\.us$/, "Zoom"]];
+  function sourceName(url){
+    let h = ""; try { h = new URL(url).hostname.replace(/^www\./, ""); } catch(_){ return "Link"; }
+    const m = SOURCES.find(([re]) => re.test(h)); if(m) return m[1];
+    const base = h.split(".").slice(-2, -1)[0] || h; return base ? base.charAt(0).toUpperCase() + base.slice(1) : "Link";
+  }
   function chipRow(it, opts){
     const o = opts || {};
     const row = el("div", "links"); row.addEventListener("click", () => markSeen(it));
@@ -363,12 +372,12 @@
     const pr = priorityOf(it.note); if(pr) row.append(prioTag(pr.p));
     if(it.due){ const d = el("span", "chip" + (it.overdue ? " who" : "")); d.innerHTML = ICON.cal; d.append(document.createTextNode(it.due)); d.title = it.overdue ? "Overdue" : "Due date"; row.append(d); }
     const pill = (url, label, icon, aria) => { const a = el("a", "link-pill"); a.href = url; a.target = "_blank"; a.rel = "noopener"; a.innerHTML = icon; if(label) a.append(el("span", null, label)); else { a.setAttribute("aria-label", aria); a.classList.add("icon-only"); } row.append(a); };
-    const u = safeUrl(it.url); if(u) pill(u, "Link", ICON.link, "Link");
+    const u = safeUrl(it.url); if(u){ const n = sourceName(u); pill(u, n, ICON.link, n); }
     const f = safeUrl(it.figma), c = safeUrl(it.chat);
     if(f) pill(f, o.compact ? "" : "Figma", ICON.figma, "Figma");
-    const nn = safeUrl(it.notion); if(nn) pill(nn, o.compact ? "" : "Notes", ICON.notes, "Notion notes");
-    const at = safeUrl(it.airtable); if(at) pill(at, o.compact ? "" : "Spec", ICON.spec, "Airtable spec");
-    if(c){ pill(c, o.compact ? "" : "Chat", ICON.chat, "Claude chat"); const a = row.lastChild; a.onclick = e => { e.preventDefault(); e.stopPropagation(); openChat(c); }; }
+    const nn = safeUrl(it.notion); if(nn) pill(nn, o.compact ? "" : "Notion", ICON.notes, "Notion");
+    const at = safeUrl(it.airtable); if(at) pill(at, o.compact ? "" : "Airtable", ICON.spec, "Airtable");
+    if(c){ pill(c, o.compact ? "" : "Claude", ICON.chat, "Claude"); const a = row.lastChild; a.onclick = e => { e.preventDefault(); e.stopPropagation(); openChat(c); }; }
     const subs = it.subtasks || [];
     if(subs.length){ const n = el("span", "chip"); n.innerHTML = ICON.todo; n.append(document.createTextNode(subs.filter(x => x && x.d).length + "/" + subs.length)); n.title = "To-dos done"; row.append(n); }
     return row.childNodes.length ? row : null;

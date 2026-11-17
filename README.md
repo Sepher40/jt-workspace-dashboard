@@ -40,7 +40,7 @@ Publishing uses npm trusted publishing, linked to `.github/workflows/publish.yml
 
 The page's database (only used for the update button's status line) is read at `meta/status-<workspace id>`.
 
-**Project notes pages:** a workspace with `notes` gets a Notion page per project, created by the page itself (no Claude tokens) in that Notion database: every task when `notes.all` is true (client work), otherwise once a task has `notes.minSteps` steps (default 3). The page gets the task's links, note, context and steps, the task gets a `Notion:` line (Notes chip), and completing the task sets the page's Status to Done. The update tasks add longer notes to the page's Notes section. Needs `Notion` → `notion-create-pages`, `notion-update-page` in the page's capabilities.
+**Project notes pages:** a workspace with `notes` gets a Notion page per project, created by the page itself (no Claude tokens) in that Notion database: every task when `notes.all` is true (client work), otherwise once a task has `notes.minSteps` steps (default 3). The page gets the task's links, note, context and steps, the task gets a `Notion:` line (Notion chip), and completing the task sets the page's Status to Done. The update tasks add longer notes to the page's Notes section. Needs `Notion` → `notion-create-pages`, `notion-update-page` in the page's capabilities.
 
 **Loading:** the page shows the last tasks and today's calendar it saw (saved in the browser) instantly, then refreshes from Todoist in the background: on open, every 2 minutes, and when you come back to the tab after 30+ seconds.
 
@@ -67,18 +67,18 @@ The page's declared capabilities must include `mcp` with Todoist (`find-tasks`, 
 
 ```
 Waiting on: Jon
-Link: https://…          main source (Slack thread, Gmail, Fathom call)
+Link: https://…          main source (Slack thread, Gmail, Fathom call); the chip is named after the app (Fathom, Slack…)
 Figma: https://…
-Notion: https://…         project notes / longer docs (shows a Notes chip)
-Airtable: https://…       spec record, e.g. the Tactus Treatments table (shows a Spec chip)
-Chat: https://claude.ai/chat/…
+Notion: https://…         project notes / longer docs (shows a Notion chip)
+Airtable: https://…       spec record, e.g. the Tactus Treatments table (shows an Airtable chip)
+Chat: https://claude.ai/chat/…   (shows a Claude chip)
 Meeting: Jeremy-Tactus UX   for Ask tasks: the meeting title it belongs to
 One or two lines of note.
 Context:
 - decision or background bullet
 ```
 
-**Project notes:** longer notes live in Notion, one page per project, linked from the task with the `Notion:` line (shown as a Notes chip). The update tasks create and maintain these pages: every Tactus task gets one; a personal task gets one once it has 3+ subtasks.
+**Project notes:** longer notes live in Notion, one page per project, linked from the task with the `Notion:` line (shown as a Notion chip). The update tasks create and maintain these pages: every Tactus task gets one; a personal task gets one once it has 3+ subtasks.
 
 **Subtasks** are the checklist; a subtask's description lines are its notes. Subtasks labelled `Question` show in the card's **Questions** fold instead (complete = answered). Priority p1–p3 shows as Urgent / High / Medium.
 
