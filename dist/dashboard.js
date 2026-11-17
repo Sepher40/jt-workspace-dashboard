@@ -777,7 +777,7 @@
     const text = r => { const p = r && r.payload; if(typeof p === "string") return p; return ((r && r.content) || []).filter(c => c.type === "text").map(c => c.text).join("\n"); };
     const tried = store("dash.chatTried", {});
     const nameOf = it => String(it.title || "").trim();
-    const candidates = items.filter(it => nameOf(it).length >= 3 && !it.chat && ["today", "ready", "waiting", "handoff"].includes(it.section) && !(Date.now() - (tried[it.id] || 0) < 3 * 24 * 3600 * 1000));
+    const candidates = items.filter(it => nameOf(it).length >= 3 && !it.chat && ["upcoming", "today", "ready", "waiting", "handoff"].includes(it.section) && !(Date.now() - (tried[it.id] || 0) < 3 * 24 * 3600 * 1000));
     const want = [...new Set(candidates.map(it => nameOf(it).toUpperCase()))];
     if(!want.length) return 0;
     const opened = text(await mcp.callTool("host:claude_browser", "preview_start", {url: "https://claude.ai/recents"}));
