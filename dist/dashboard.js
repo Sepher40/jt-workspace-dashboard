@@ -180,6 +180,7 @@
       waitingOn: keys["Waiting on"] || "", url: safeUrl(keys.Link) || "https://app.todoist.com/app/task/" + t.id, todoistUrl: "https://app.todoist.com/app/task/" + t.id,
       figma: safeUrl(keys.Figma), notion: safeUrl(keys.Notion), airtable: safeUrl(keys.Airtable), chat: safeUrl(keys.Chat), meeting: keys.Meeting || "", due, overdue, newAt: Date.parse(t.addedAt) || 0, seenAt: seenMap[t.id] || 0};
   }
+  function ymd(days){ const d = new Date(Date.now() + days * 864e5); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
   function projectIds(){ const t = WS.todoist || {}; return [].concat(t.projectIds || [], t.projectId || []).filter(Boolean); }
   let loadSeq = 0;
   let lastLoad = 0;
@@ -191,15 +192,21 @@
     try {
       const results = await Promise.all(pids.map(pid => Promise.all([
         td("find-tasks", {projectId: pid, limit: 100}),
-        td("find-completed-tasks", {projectId: pid, limit: 30}).catch(() => null)
+        // Completed subtasks aren't in find-tasks, so fetch ~3 months of completions (the API's max window)
+        // to show them under their open parent's "Show N completed" toggle.
+        td("find-completed-tasks", {projectId: pid, since: ymd(-89), until: ymd(0), limit: 200}).catch(() => null)
       ])));
       if(seq !== loadSeq || w !== WS) return;
-      const next = [];
+      const next = [], weekAgo = Date.now() - 7 * 864e5;
       results.forEach(([act, comp]) => {
         const all = parse(act).tasks || [], ids = new Set(all.map(t => t.id));
-        const desc = id => all.filter(k => k.parentId === id).flatMap(k => [k, ...desc(k.id)]);
+        const compAll = comp ? (parse(comp).tasks || []) : [];
+        const doneKids = compAll.filter(t => t.parentId && !ids.has(t.id)).map(t => Object.assign({}, t, {checked: true}))
+          .sort((a, b) => (Date.parse(a.completedAt) || 0) - (Date.parse(b.completedAt) || 0));
+        const pool = all.concat(doneKids);
+        const desc = id => pool.filter(k => k.parentId === id).flatMap(k => [k, ...desc(k.id)]);
         all.filter(t => !t.parentId || !ids.has(t.parentId)).forEach((t, i) => next.push(toItem(t, i, desc(t.id))));
-        const done = comp ? (parse(comp).tasks || []).filter(t => !t.parentId) : [];
+        const done = compAll.filter(t => !t.parentId && (Date.parse(t.completedAt) || 0) >= weekAgo).slice(0, 30);
         done.forEach(t => next.push({id: t.id, title: t.content, section: "done", _completed: true, labels: t.labels || [], description: String(t.description || ""), touchedAt: Date.parse(t.completedAt) || 0, subtasks: [], questions: [], _server: []}));
       });
       items = next; cache[w.id] = next; saveCache(w.id, next); setStatus(""); render();
@@ -263,7 +270,7 @@
   function isProject(w, it){
     const n = w.notes; if(!n || !n.dataSource) return false;
     if(it.notion || !["today", "ready", "waiting", "handoff", "upcoming", "later"].includes(it.section)) return false;
-    return n.all || (it.subtasks || []).length >= (n.minSteps || 3);
+    return n.all || (it.subtasks || []).filter(s => !s.d).length >= (n.minSteps || 3);
   }
   function notesMarkdown(it){
     const out = [];

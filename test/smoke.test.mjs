@@ -36,7 +36,7 @@ async function run(name, config, steps, opts = {}){
     w.claude = {use: async n => n === "mcp" && !opts.noConnectors ? {callTool: async (s, t, i) => {
       calls.push([s, t, i]);
       if(t === "find-tasks") return txt({tasks: TASKS[i.projectId] || []});
-      if(t === "find-completed-tasks") return txt({tasks: []});
+      if(t === "find-completed-tasks") return txt({tasks: i.projectId === "P1" ? [{id: "a3", content: "Old finished step", parentId: "a", labels: [], completedAt: now}] : []});
       if(t === "list_events") return txt({events: EVENTS});
       if(t === "notion-create-pages") return txt({pages: [{id: "n1", url: "https://app.notion.com/p/abc123?pvs=204"}]});
       return txt({});
@@ -68,6 +68,9 @@ await run("Personal + Tactus (this account)", {
   check(text("#main").includes("Paused") && text("#main").includes("Waiting") && !text("#main").includes("Ready to show"), "personal section names match labels");
   check(!d.getElementById("list-handoff"), "no handoff section in Personal");
   check(text("#meetings").includes("Time Blocking"), "personal shows all events");
+  check(!text("#list-upcoming").includes("Old finished step") && text("#list-upcoming").includes("Show 1 completed"), "completed subtask hidden behind toggle");
+  [...d.querySelectorAll("#list-upcoming .done-toggle")][0].click(); await wait(50);
+  check(text("#list-upcoming").includes("Old finished step") && text("#list-upcoming").includes("Hide completed"), "toggle shows completed subtask");
   // main checkbox completes
   d.querySelector('#list-upcoming .item .main-check').click(); await wait(500);
   check(writes().some(c => c[1] === "complete-tasks" && c[2].ids[0] === "a"), "main checkbox completes the task in Todoist");
