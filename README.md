@@ -60,7 +60,7 @@ The page's declared capabilities must include `mcp` with Todoist (`find-tasks`, 
 | `waiting` | `Waiting` | Waiting |
 | `handoff` | `Handoff` | Handoff (feature `handoff`) |
 | `later` | `Later` | Later |
-| `meeting` | `Ask` | Under its meeting in the side rail (feature `meetingAsks`) |
+| `meeting` | `Ask` | Under its meeting in the side rail (feature `meetingAsks`). With a status label too, the task stays in that section and also shows under "To ask"; ticking it there removes only the Ask label |
 | `done` | completed in Todoist | Completed (last 7 days) |
 
 **Task description**, top to bottom (all optional):

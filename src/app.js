@@ -163,7 +163,9 @@
     let note = noteText; if(prio) note = prio + " priority. " + note;
     const log = ctx.split("\n").map(x => x.replace(/^\s*[-*]\s*/, "").trim()).filter(Boolean).map(x => ({t: x}));
     const has = k => labels.includes(LABELS[k]);
-    const section = has("meeting") ? "meeting" : has("today") ? "today" : has("ready") ? "ready" : has("waiting") ? "waiting" : (has("handoff") && feat("handoff")) ? "handoff" : has("later") ? "later" : "upcoming";
+    const status = has("today") ? "today" : has("ready") ? "ready" : has("waiting") ? "waiting" : (has("handoff") && feat("handoff")) ? "handoff" : has("later") ? "later" : null;
+    // A task with Ask and a status label stays in its section and also shows under "To ask" (ask: true).
+    const section = has("meeting") && !status ? "meeting" : status || "upcoming", ask = has("meeting") && !!status;
     const dueRaw = t.dueDate || (t.due && (t.due.date || t.due.string)) || "";
     let due = "", overdue = false;
     if(dueRaw){
@@ -175,7 +177,7 @@
     const subtasks = kids.filter(k => !isQ(k)).map(k => ({id: k.id, t: k.content, d: !!k.checked, n: Date.parse(k.addedAt) || 0, seen: !!seenMap[k.id],
       notes: String(k.description || "").split("\n").map(x => x.replace(/^\s*[-*]\s*/, "").trim()).filter(Boolean).map(x => ({t: x}))}));
     const questions = kids.filter(isQ).map(k => ({id: k.id, t: k.content, d: !!k.checked}));
-    return {id: t.id, title: t.content, description: String(t.description || ""), labels, section, order: orderMap[t.id] ?? (i + 1), projectId: t.projectId,
+    return {id: t.id, title: t.content, description: String(t.description || ""), labels, section, ask, order: orderMap[t.id] ?? (i + 1), projectId: t.projectId,
       note, log, subtasks, questions, _server: subtasks.concat(questions).map(x => ({id: x.id, d: x.d})),
       waitingOn: keys["Waiting on"] || "", url: safeUrl(keys.Link) || "https://app.todoist.com/app/task/" + t.id, todoistUrl: "https://app.todoist.com/app/task/" + t.id,
       figma: safeUrl(keys.Figma), notion: safeUrl(keys.Notion), airtable: safeUrl(keys.Airtable), chat: safeUrl(keys.Chat), meeting: keys.Meeting || "", due, overdue, newAt: Date.parse(t.addedAt) || 0, seenAt: seenMap[t.id] || 0};
@@ -241,10 +243,12 @@
         else {
           if(it._completed){ await td("uncomplete-tasks", {ids: [id]}); it._completed = false; }
           labels = (it.labels || []).filter(l => !statusLabels().includes(l)); if(LABELS[s]) labels.push(LABELS[s]);
+          if(it.ask && s !== "meeting" && LABELS.meeting) labels.push(LABELS.meeting);
           desc = setLine(desc, "Waiting on", s === "waiting" ? (patch.waitingOn || it.waitingOn) : null);
           desc = setLine(desc, "Meeting", s === "meeting" ? (patch.meeting || it.meeting) : null);
         }
       } else if("waitingOn" in patch) desc = setLine(desc, "Waiting on", patch.waitingOn);
+      if(patch.dropAsk){ labels = (it.labels || []).filter(l => l !== LABELS.meeting); it.ask = false; desc = setLine(desc, "Meeting", null); }
       if("chat" in patch) desc = setLine(desc, "Chat", patch.chat);
       if("notion" in patch) desc = setLine(desc, "Notion", patch.notion);
       const up = {id};
@@ -685,10 +689,16 @@
   /* ---------- side rail ---------- */
   function renderAsk(a){
     const li = el("li", "ask");
-    const c = el("button", "check"); c.type = "button"; c.setAttribute("aria-label", "Mark done: " + (a.title || "")); c.disabled = !canWrite; c.onclick = () => change(a, {section: "done"});
-    const tx = el("span", "t", a.title || "Untitled"); if(isNew(a)) tx.append(newTag()); if(a.note) tx.append(noteEl("span", "n", a.note, a.id));
+    const c = el("button", "check"); c.type = "button"; c.disabled = !canWrite;
+    if(a.ask){
+      // A project task to bring up: ticking it means "asked" and takes off the Ask label, the task itself stays open.
+      c.setAttribute("aria-label", "Mark asked: " + (a.title || ""));
+      c.onclick = () => { a.ask = false; render(); write(a.id, {dropAsk: true}); toast("Marked asked"); };
+    } else { c.setAttribute("aria-label", "Mark done: " + (a.title || "")); c.onclick = () => change(a, {section: "done"}); }
+    const tx = el("span", "t", a.title || "Untitled"); if(isNew(a)) tx.append(newTag()); if(a.note && !a.ask) tx.append(noteEl("span", "n", a.note, a.id));
+    if(a.ask) tx.append(el("span", "n", "In " + (LABEL[a.section] || a.section)));
     li.append(c, tx);
-    if(canWrite){ const acts = el("div", "actions"); acts.append(moreMenu(a, [["Move to " + LABEL.today, {section: "today"}], ["Delete", "removed", "danger"]])); li.append(acts); }
+    if(canWrite && !a.ask){ const acts = el("div", "actions"); acts.append(moreMenu(a, [["Move to " + LABEL.today, {section: "today"}], ["Delete", "removed", "danger"]])); li.append(acts); }
     return li;
   }
   function openQuestions(){ const out = []; items.filter(i => SECTIONS.includes(i.section)).forEach(it => (it.questions || []).forEach(q => { if(q && q.t && !q.d) out.push([it, q]); })); return out; }
@@ -704,7 +714,7 @@
     else if(dayData.error){ ul.append(el("li", "empty", "Couldn't load your calendar.")); }
     const m = meetingsList();
     if(!dayData.off && !dayData.error && !m.length) ul.append(el("li", "empty", "Nothing on your calendar today."));
-    const asks = items.filter(i => i.section === "meeting");
+    const asks = items.filter(i => i.section === "meeting" || (i.ask && SECTIONS.includes(i.section)));
     const used = new Set();
     const follow = feat("showFollowUp") ? sorted("ready").concat(sorted("waiting")) : [];
     m.forEach((x, idx) => {

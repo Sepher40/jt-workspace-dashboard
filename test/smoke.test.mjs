@@ -22,6 +22,7 @@ const TASKS = {
     {id: "ts", content: "Rename tags", parentId: "t", description: "- Use 'Treatment tags'", labels: [], addedAt: now},
     {id: "h", content: "Category Connections", description: "", labels: ["Handoff"], addedAt: now},
     {id: "new1", content: "Remembering Numbers", description: "Figma: https://www.figma.com/design/y\nAirtable: https://airtable.com/app/tbl/rec1", labels: [], addedAt: now},
+    {id: "both", content: "Numbers project", description: "Chat: https://claude.ai/chat/2", labels: ["Ask", "In progress"], addedAt: now},
     {id: "ask", content: "Ask about pricing page", description: "Meeting: Jeremy-Tactus UX", labels: ["Ask"], addedAt: now}
   ]
 };
@@ -77,6 +78,10 @@ await run("Personal + Tactus (this account)", {
   // switch workspace
   [...d.querySelectorAll("#wsSwitch button")].find(b => b.textContent === "Tactus").click(); await wait(300);
   check(text("#list-today").includes("Picture Recall"), "tactus task in In progress");
+  check(text("#list-today").includes("Numbers project") && text("#meetings").includes("Numbers project"), "Ask + In progress stays in In progress and shows under To ask");
+  { const b = [...d.querySelectorAll("#meetings .ask")].find(x => x.textContent.includes("Numbers project")).querySelector(".check"); b.click(); await wait(300);
+    const up = writes().filter(c => c[1] === "update-tasks" && c[2].tasks[0].id === "both" && c[2].tasks[0].labels).pop();
+    check(up && JSON.stringify(up[2].tasks[0].labels) === '["In progress"]' && !writes().some(c => c[1] === "complete-tasks" && c[2].ids[0] === "both"), "ticking it under To ask removes Ask, keeps the task open"); }
   check(text("#main").includes("Ready to show"), "tactus section name");
   await wait(400);
   const created = writes().filter(c => c[1] === "notion-create-pages");
